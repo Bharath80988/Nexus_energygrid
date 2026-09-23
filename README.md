@@ -37,3 +37,18 @@ We don't do basic dual-systems here. 🙅‍♂️ Our dashboard orchestrates an
 The dashboard rocks a sick dark-glass aesthetic ('glassmorphism' 🪟✨) pushing buttery smooth SVG animations via Framer Motion. 🎥 The interface actively shape-shifts based on the grid's status across different global coordinates. 🌍 
 
 Using the integrated *NEXUS Interactive Global Map* 🗺️, operators can pull live diagnostic stats from major hubs like London 🇬🇧, New York 🍎, and Mumbai 🇮🇳 with a single click. Or, just smash the *Locate Me* 📍 button to spin up a micro-grid right over your physical location. 🔥🤯
+
+---
+
+## 🐳 Quick Start with Docker (Single Image)
+
+Run the unified frontend & backend with a single command:
+
+```bash
+docker compose up --build
+```
+Then visit `http://localhost:5000`.
+
+### 🚀 Deploy to Render
+The repository is fully configured for 1-click deployment on Render as a single Docker Web Service. See [DEPLOYMENT.md](./DEPLOYMENT.md) for step-by-step instructions.
+

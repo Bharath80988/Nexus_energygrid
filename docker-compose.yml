@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  nexus-energygrid:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nexus-energygrid:latest
+    container_name: nexus-energygrid
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+    restart: unless-stopped
