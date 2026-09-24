@@ -3,12 +3,13 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { 
-  Settings, Zap, Wind, Sun, AlertTriangle, Activity, Droplets, Atom, 
+  Zap, Wind, Sun, AlertTriangle, Activity, Droplets, Atom, 
   MapPin, Thermometer, Gauge, TrendingUp, Leaf, BatteryCharging, 
-  Layers, RefreshCw, ChevronRight, CheckCircle2, AlertOctagon,
-  TrendingDown, Building2
+  Layers, CheckCircle2, AlertOctagon, TrendingDown, Building2,
+  ChevronRight, ShieldCheck, Cpu, ArrowUpRight, ArrowDownRight, Compass
 } from 'lucide-react';
 import NetworkBackground from './components/NetworkBackground';
+import Navbar from './components/Navbar';
 import SettingsModal from './components/SettingsModal';
 import EnergyInfoModal from './components/EnergyInfoModal';
 import LocationModal from './components/LocationModal';
@@ -17,12 +18,19 @@ import LiveMeter from './components/LiveMeter';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || (import.meta.env.DEV ? 'http://localhost:5000/api' : '/api');
 
+const tabVariants = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } },
+  exit: { opacity: 0, y: -12, transition: { duration: 0.2 } }
+};
+
 const cardVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: (i) => ({ opacity: 1, y: 0, transition: { delay: i * 0.08, duration: 0.4, ease: 'easeOut' } })
+  hidden: { opacity: 0, y: 16 },
+  visible: (i) => ({ opacity: 1, y: 0, transition: { delay: i * 0.06, duration: 0.35, ease: 'easeOut' } })
 };
 
 function App() {
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'stations' | 'balance' | 'analytics' | 'storage'
   const [location, setLocation] = useState({ name: 'Chennai, Tamil Nadu', lat: 13.0827, lon: 80.2707 });
   const [energyData, setEnergyData] = useState(null);
   const [forecastData, setForecastData] = useState(null);
@@ -35,6 +43,7 @@ function App() {
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [isRegionalModalOpen, setIsRegionalModalOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
+  const [stationFilter, setStationFilter] = useState('all');
 
   const [refreshRate, setRefreshRate] = useState(5000);
   const [units, setUnits] = useState('metric');
@@ -69,13 +78,11 @@ function App() {
     return () => clearInterval(interval);
   }, [fetchData, refreshRate]);
 
-  // Safe number formatter
   const safeNum = (v) => {
     const n = Number(v);
     return isNaN(n) ? 0 : n;
   };
 
-  // Unit conversion helpers
   const formatTemp = (celsius) => {
     const c = safeNum(celsius);
     if (units === 'imperial') return `${((c * 9) / 5 + 32).toFixed(1)}°F`;
@@ -88,7 +95,6 @@ function App() {
     return `${(k / 3.6).toFixed(1)} m/s`;
   };
 
-  // Memoized Chart Dataset
   const chartData = useMemo(() => {
     if (!energyData?.history) return [];
     return energyData.history.map(item => ({
@@ -108,8 +114,9 @@ function App() {
       weather: `${safeNum(energyData?.current?.irradiance).toFixed(0)} W/m²`,
       weatherLabel: 'Irradiance',
       extra: `Cloud: ${safeNum(energyData?.current?.cloudCover)}%`,
-      gradient: 'from-[#1a0505] to-[#0a0a0a]',
-      borderHover: 'hover:border-[#E63946]',
+      gradient: 'from-[#1c0808] to-[#0a0a0a]',
+      accentColor: '#fbbf24',
+      badgeClass: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
     },
     {
       key: 'wind', icon: Wind, title: 'Wind Kinetic', subtitle: 'Turbine Array',
@@ -117,8 +124,9 @@ function App() {
       weather: formatSpeed(energyData?.current?.windSpeed),
       weatherLabel: 'Wind Speed',
       extra: `Pressure: ${safeNum(energyData?.current?.pressure).toFixed(0)} hPa`,
-      gradient: 'from-[#0a0a0a] to-[#1a0505]',
-      borderHover: 'hover:border-[#E63946]',
+      gradient: 'from-[#08151c] to-[#0a0a0a]',
+      accentColor: '#22d3ee',
+      badgeClass: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
     },
     {
       key: 'ocean', icon: Droplets, title: 'Ocean Tidal', subtitle: 'Wave Converter',
@@ -126,8 +134,9 @@ function App() {
       weather: `${safeNum(energyData?.current?.pressure).toFixed(0)} hPa`,
       weatherLabel: 'Pressure',
       extra: `Humidity: ${safeNum(energyData?.current?.humidity)}%`,
-      gradient: 'from-[#0a0a0a] to-[#0d0008]',
-      borderHover: 'hover:border-[#E63946]',
+      gradient: 'from-[#080d1c] to-[#0a0a0a]',
+      accentColor: '#60a5fa',
+      badgeClass: 'bg-blue-500/10 text-blue-400 border-blue-500/30'
     },
     {
       key: 'nuclear', icon: Atom, title: 'Nuclear Core', subtitle: 'Fission Baseload',
@@ -135,8 +144,9 @@ function App() {
       weather: formatTemp(energyData?.current?.temperature),
       weatherLabel: 'Ambient Temp',
       extra: 'Baseload: 98.4%',
-      gradient: 'from-[#150505] to-[#0a0a0a]',
-      borderHover: 'hover:border-[#E63946]',
+      gradient: 'from-[#1c0808] to-[#0a0a0a]',
+      accentColor: '#f87171',
+      badgeClass: 'bg-rose-500/10 text-rose-400 border-rose-500/30'
     },
   ], [energyData?.current, units]);
 
@@ -153,6 +163,10 @@ function App() {
   const gridBalance = safeNum(energyData?.current?.gridBalanceKw || (powerProducing - powerNeeded));
   const isSurplus = gridBalance >= 0;
   const coveragePercent = safeNum(energyData?.current?.coveragePercent || 100);
+
+  const filteredPlants = stationFilter === 'all' 
+    ? regionalPlants 
+    : regionalPlants.filter(p => p.type === stationFilter);
 
   if (!energyData && loading) {
     return (
@@ -173,7 +187,7 @@ function App() {
             />
           </div>
           <div className="text-white text-lg font-exo font-bold tracking-widest uppercase">
-            Initializing State Grid Telemetry...
+            Initializing Nexus Grid Platform...
           </div>
           <div className="w-48 h-1 bg-gray-800 rounded-full overflow-hidden">
             <motion.div
@@ -188,9 +202,23 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-x-hidden text-white bg-[#060606] selection:bg-[#E63946] selection:text-white pb-14">
+    <div className="min-h-screen relative overflow-x-hidden text-white bg-[#060606] selection:bg-[#E63946] selection:text-white pb-16">
       <NetworkBackground />
       
+      {/* ── APPLE-STYLE FLOATING GLASSMORPHIC NAVBAR ── */}
+      <Navbar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        locationName={location.name}
+        totalOutput={totalOutput}
+        isRefreshing={isRefreshing}
+        onRefresh={() => fetchData(true)}
+        onOpenLocation={() => setIsLocationModalOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        gridStatus={isSurplus ? 'SURPLUS' : 'DEFICIT'}
+      />
+
+      {/* ── MODALS ── */}
       <SettingsModal 
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)} 
@@ -221,581 +249,668 @@ function App() {
         currentMetrics={energyData?.current}
       />
 
-      <div className="p-3 md:p-6 max-w-[1440px] mx-auto space-y-5 relative z-10">
-
-        {/* ── TOP HEADER / NAV BAR ── */}
-        <motion.header
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="rounded-2xl p-4 flex flex-col xl:flex-row justify-between items-center gap-4 relative overflow-hidden"
-          style={{
-            background: 'linear-gradient(135deg, rgba(230,57,70,0.08), rgba(0,0,0,0.7))',
-            border: '1px solid rgba(230,57,70,0.2)',
-            boxShadow: '0 0 40px rgba(230,57,70,0.05), 0 4px 20px rgba(0,0,0,0.5)'
-          }}
-        >
-          <div className="flex items-center gap-3 md:gap-4">
-            <div className="relative p-2.5 rounded-xl bg-[#E63946]/10 border border-[#E63946]/30">
-              <Zap size={24} className="text-[#E63946] relative z-10" />
-              <motion.div
-                animate={{ opacity: [0.3, 0.7, 0.3] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="absolute inset-0 rounded-xl"
-                style={{ boxShadow: '0 0 20px rgba(230,57,70,0.4)' }}
-              />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl md:text-3xl font-exo font-bold tracking-wider">
-                  NEXUS<span className="text-[#E63946]" style={{ textShadow: '0 0 10px rgba(230,57,70,0.6)' }}>GRID</span>
-                </h1>
-                <span className="px-2 py-0.5 text-[9px] rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-mono">
-                  LIVE 50.0Hz
-                </span>
-              </div>
-              <p className="text-[10px] text-gray-400 tracking-[0.2em] uppercase">
-                {stateTitle} Power Demand & Generation System
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-2.5 md:gap-3">
-            {/* Quick Regional Plants Launcher */}
-            <button
-              onClick={() => setIsRegionalModalOpen(true)}
-              className="group flex items-center gap-2 px-3.5 py-2 rounded-xl border border-gray-800 hover:border-[#E63946] bg-black/50 hover:bg-[#E63946]/10 transition-all duration-300"
-              title="Inspect power stations feeding this location"
-            >
-              <Layers size={16} className="text-[#E63946] group-hover:scale-110 transition-transform" />
-              <div className="text-left">
-                <span className="text-[9px] text-gray-400 uppercase tracking-widest block leading-none">Power Stations</span>
-                <span className="text-xs font-bold text-white">{regionalPlants.length} Units</span>
-              </div>
-            </button>
-
-            {/* State & City Location Selector Button */}
-            <button
-              onClick={() => setIsLocationModalOpen(true)}
-              className="group flex items-center gap-2.5 px-4 py-2.5 rounded-xl font-bold transition-all duration-300 bg-gradient-to-r from-[#E63946] to-[#c0392b] hover:shadow-[0_0_30px_rgba(230,57,70,0.6)]"
-              style={{
-                boxShadow: '0 0 20px rgba(230,57,70,0.3)',
-              }}
-            >
-              <MapPin size={16} className="text-white group-hover:animate-bounce" />
-              <div className="flex flex-col text-left">
-                <span className="text-[9px] uppercase text-white/70 tracking-widest leading-none">Active State / City</span>
-                <span className="text-xs md:text-sm text-white truncate max-w-[150px]">{location.name}</span>
-              </div>
-            </button>
-
-            {/* Manual Refresh Button */}
-            <button
-              onClick={() => fetchData(true)}
-              disabled={isRefreshing}
-              className="p-3 rounded-xl border border-gray-800 hover:border-[#E63946] bg-white/5 hover:bg-white/10 transition-all text-gray-400 hover:text-white"
-              title="Sync Telemetry"
-            >
-              <RefreshCw size={16} className={isRefreshing ? "animate-spin text-[#E63946]" : ""} />
-            </button>
-
-            {/* Settings Button */}
-            <button
-              onClick={() => setIsSettingsOpen(true)}
-              className="p-3 rounded-xl transition-all duration-300 border border-gray-800 hover:border-[#E63946] bg-white/5 group"
-              title="System Configuration"
-            >
-              <Settings size={16} className="text-gray-400 group-hover:text-[#E63946] group-hover:rotate-90 transition-all duration-500" />
-            </button>
-          </div>
-        </motion.header>
-
-        {/* ── POWER NEEDED (DEMAND) VS POWER PRODUCING (SUPPLY) BALANCE WIDGET ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl p-5 md:p-6 border border-[#E63946]/30 bg-gradient-to-br from-[#1c0606]/90 via-black/95 to-zinc-950/90 relative overflow-hidden"
-          style={{
-            boxShadow: '0 4px 30px rgba(230,57,70,0.15)'
-          }}
-        >
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4 pb-4 border-b border-gray-800/80">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <Gauge size={18} className="text-[#E63946]" />
-                <span className="text-xs font-bold text-[#E63946] tracking-[0.2em] uppercase">
-                  Real-Time Grid Balance Matrix
-                </span>
-              </div>
-              <h2 className="text-xl md:text-2xl font-exo font-bold text-white">
-                Power Needed vs Power Producing in <span className="text-[#E63946]">{location.name}</span>
-              </h2>
-              <p className="text-xs text-gray-400 mt-0.5">
-                Target Substation: {energyData?.regionalInfrastructure?.regionName || 'State Transmission Network'}
-              </p>
-            </div>
-
-            {/* Surplus / Deficit Badge */}
-            <div className={`px-4 py-2.5 rounded-xl border flex items-center gap-3 ${
-              isSurplus 
-                ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.2)]'
-                : 'bg-rose-500/10 border-rose-500/40 text-rose-300 shadow-[0_0_20px_rgba(244,63,94,0.2)]'
-            }`}>
-              {isSurplus ? (
-                <CheckCircle2 size={22} className="text-emerald-400 animate-pulse" />
-              ) : (
-                <AlertOctagon size={22} className="text-rose-400 animate-pulse" />
-              )}
-              <div>
-                <span className="text-[10px] uppercase font-bold tracking-widest block leading-none text-gray-400">
-                  Grid Status
-                </span>
-                <span className="text-base font-exo font-bold">
-                  {isSurplus ? `+${gridBalance.toFixed(1)} kW SURPLUS` : `${gridBalance.toFixed(1)} kW DEFICIT`}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* 3 Metrics Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-            {/* 1. Needed (Demand) */}
-            <div className="p-4 rounded-xl bg-black/60 border border-gray-800/80">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Power Needed (Demand)</span>
-                <TrendingDown size={14} className="text-amber-400" />
-              </div>
-              <div className="text-2xl md:text-3xl font-exo font-bold text-white">
-                {powerNeeded.toFixed(1)}
-                <span className="text-xs text-gray-500 font-normal ml-1">kW required</span>
-              </div>
-              <p className="text-[10px] text-gray-500 mt-1">Calculated base consumption & diurnal peak load</p>
-            </div>
-
-            {/* 2. Producing (Supply) */}
-            <div className="p-4 rounded-xl bg-black/60 border border-[#E63946]/30">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] text-[#E63946] uppercase tracking-widest font-bold">Power Producing (Supply)</span>
-                <Zap size={14} className="text-[#E63946]" />
-              </div>
-              <div className="text-2xl md:text-3xl font-exo font-bold text-[#E63946]">
-                {powerProducing.toFixed(1)}
-                <span className="text-xs text-gray-400 font-normal ml-1">kW generating</span>
-              </div>
-              <p className="text-[10px] text-gray-500 mt-1">Real-time output across Solar, Wind, Nuclear & Ocean</p>
-            </div>
-
-            {/* 3. Coverage % */}
-            <div className="p-4 rounded-xl bg-black/60 border border-gray-800/80">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Demand Coverage</span>
-                <Activity size={14} className="text-emerald-400" />
-              </div>
-              <div className="text-2xl md:text-3xl font-exo font-bold text-white">
-                {coveragePercent}%
-                <span className="text-xs text-emerald-400 font-normal ml-1">covered</span>
-              </div>
-              <p className="text-[10px] text-gray-500 mt-1">
-                {coveragePercent >= 100 ? '100% Demand satisfied with export capacity' : 'Substation buffering with battery & imports'}
-              </p>
-            </div>
-          </div>
-
-          {/* Balance Progress Bar */}
-          <div>
-            <div className="flex justify-between text-[10px] text-gray-400 mb-1 font-mono">
-              <span>0 kW (Zero)</span>
-              <span>Baseline Demand: {powerNeeded.toFixed(0)} kW</span>
-              <span>Total Generation: {powerProducing.toFixed(0)} kW</span>
-            </div>
-            <div className="w-full h-3 bg-black/80 rounded-full overflow-hidden border border-gray-800 relative">
-              <div 
-                className={`h-full rounded-full transition-all duration-700 ${
-                  isSurplus 
-                    ? 'bg-gradient-to-r from-emerald-500 via-teal-400 to-[#E63946]'
-                    : 'bg-gradient-to-r from-rose-600 to-amber-500'
-                }`}
-                style={{ width: `${Math.min(100, (powerProducing / (powerNeeded || 1)) * 100)}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Quick Cities in this State Bar */}
-          {availableCities.length > 1 && (
-            <div className="mt-4 pt-3 border-t border-gray-800/80 flex flex-wrap items-center gap-2">
-              <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold flex items-center gap-1 mr-1">
-                <Building2 size={12} className="text-[#E63946]" /> Switch City in {stateTitle}:
-              </span>
-              {availableCities.map((c) => {
-                const isCurrent = location.name.toLowerCase().includes(c.name.toLowerCase());
-                return (
-                  <button
-                    key={c.name}
-                    onClick={() => setLocation({ name: `${c.name}, ${stateTitle}`, lat: c.lat, lon: c.lon })}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all border ${
-                      isCurrent
-                        ? 'bg-[#E63946] text-white border-[#E63946] shadow-[0_0_10px_rgba(230,57,70,0.4)]'
-                        : 'bg-black/50 text-gray-400 border-gray-800 hover:border-[#E63946]/50 hover:text-white'
-                    }`}
-                  >
-                    {c.name}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </motion.div>
+      {/* ── MAIN CONTENT CONTAINER ── */}
+      <main className="p-3 sm:p-6 max-w-[1440px] mx-auto relative z-10 mt-2 space-y-6">
 
         {error && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-xl flex items-center gap-3 bg-[#E63946]/15 border border-[#E63946]/40">
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl flex items-center gap-3 bg-[#E63946]/15 border border-[#E63946]/40">
             <AlertTriangle size={18} className="text-[#E63946]" /> 
             <span className="text-sm text-gray-200">{error}</span>
           </motion.div>
         )}
 
-        {/* ── REGIONAL POWER STATIONS STRIP ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl p-4 md:p-5 relative overflow-hidden border border-[#E63946]/20 bg-gradient-to-r from-zinc-950/90 via-black/90 to-zinc-950/90"
-        >
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-3.5">
-            <div className="flex items-center gap-2">
-              <Layers size={18} className="text-[#E63946]" />
-              <h2 className="text-sm md:text-base font-exo font-bold text-white uppercase tracking-wider">
-                Power Stations Supplying <span className="text-[#E63946]">{location.name}</span>
-              </h2>
-            </div>
-            <button
-              onClick={() => setIsRegionalModalOpen(true)}
-              className="text-xs text-[#E63946] hover:text-white flex items-center gap-1 font-bold transition-colors group"
-            >
-              <span>View All Station Specs ({regionalPlants.length} Plants)</span>
-              <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {regionalPlants.map((plant) => {
-              const Icon = plant.type === 'nuclear' ? Atom : plant.type === 'solar' ? Sun : plant.type === 'wind' ? Wind : Droplets;
-              return (
-                <div
-                  key={plant.id}
-                  onClick={() => setIsRegionalModalOpen(true)}
-                  className="p-3.5 rounded-xl border border-gray-800/80 hover:border-[#E63946]/60 bg-black/60 hover:bg-[#E63946]/5 transition-all cursor-pointer group"
-                >
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-2">
-                      <Icon size={14} className="text-[#E63946]" />
-                      <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
-                        {plant.type}
+        {/* ── TAB 1: EXECUTIVE OVERVIEW ── */}
+        <AnimatePresence mode="wait">
+          {activeTab === 'overview' && (
+            <motion.div key="overview" variants={tabVariants} initial="initial" animate="animate" exit="exit" className="space-y-6">
+              
+              {/* Hero Banner: Net Demand vs Supply & Status Bar */}
+              <div 
+                className="rounded-3xl p-6 md:p-8 border border-white/10 backdrop-blur-xl relative overflow-hidden"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(25, 10, 10, 0.8), rgba(10, 10, 10, 0.9))',
+                  boxShadow: '0 8px 40px rgba(0, 0, 0, 0.6)'
+                }}
+              >
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pb-6 border-b border-white/10">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#E63946]/15 text-[#E63946] border border-[#E63946]/30">
+                        {stateTitle} Smart Grid
+                      </span>
+                      <span className="text-xs text-gray-400 font-mono">
+                        Node: {location.name}
                       </span>
                     </div>
-                    <span className="text-[10px] text-emerald-400 font-mono font-bold">
-                      {plant.outputSharePercent}% Share
+                    <h2 className="text-2xl md:text-4xl font-exo font-bold text-white tracking-tight">
+                      Grid Telemetry & Generation Overview
+                    </h2>
+                  </div>
+
+                  {/* Surplus / Deficit High-Impact Pill */}
+                  <div className={`px-5 py-3 rounded-2xl border flex items-center gap-3.5 backdrop-blur-md ${
+                    isSurplus 
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 shadow-[0_0_25px_rgba(16,185,129,0.15)]'
+                      : 'bg-rose-500/10 border-rose-500/30 text-rose-300 shadow-[0_0_25px_rgba(244,63,94,0.15)]'
+                  }`}>
+                    {isSurplus ? (
+                      <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400">
+                        <CheckCircle2 size={24} className="animate-pulse" />
+                      </div>
+                    ) : (
+                      <div className="p-2 rounded-xl bg-rose-500/20 text-rose-400">
+                        <AlertOctagon size={24} className="animate-pulse" />
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-[10px] uppercase font-bold tracking-widest block text-gray-400">
+                        Grid Balance Margin
+                      </span>
+                      <span className="text-lg md:text-xl font-exo font-bold">
+                        {isSurplus ? `+${gridBalance.toFixed(1)} kW SURPLUS` : `${gridBalance.toFixed(1)} kW DEFICIT`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3 Executive Stat Tiles */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6">
+                  {/* Power Needed */}
+                  <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Power Needed (Demand)</span>
+                      <TrendingDown size={14} className="text-amber-400" />
+                    </div>
+                    <div className="text-2xl md:text-3xl font-exo font-bold text-white">
+                      {powerNeeded.toFixed(1)}
+                      <span className="text-xs text-gray-400 font-normal ml-1">kW</span>
+                    </div>
+                    <div className="text-[10px] text-gray-500 mt-1">
+                      Baseline requirement & commercial load
+                    </div>
+                  </div>
+
+                  {/* Power Producing */}
+                  <div className="p-4 rounded-2xl bg-white/[0.02] border border-[#E63946]/30">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-[10px] text-[#E63946] uppercase tracking-widest font-bold">Power Producing (Supply)</span>
+                      <Zap size={14} className="text-[#E63946]" />
+                    </div>
+                    <div className="text-2xl md:text-3xl font-exo font-bold text-[#E63946]">
+                      {powerProducing.toFixed(1)}
+                      <span className="text-xs text-gray-300 font-normal ml-1">kW</span>
+                    </div>
+                    <div className="text-[10px] text-gray-500 mt-1">
+                      Live multi-source energy generation
+                    </div>
+                  </div>
+
+                  {/* Demand Coverage */}
+                  <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Demand Coverage</span>
+                      <Activity size={14} className="text-emerald-400" />
+                    </div>
+                    <div className="text-2xl md:text-3xl font-exo font-bold text-white">
+                      {coveragePercent}%
+                      <span className="text-xs text-emerald-400 font-normal ml-1">covered</span>
+                    </div>
+                    <div className="text-[10px] text-gray-500 mt-1">
+                      {coveragePercent >= 100 ? '100% Demand satisfied with net export' : 'Substation buffering with battery banks'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Balance Progress Strip */}
+                <div className="mt-5">
+                  <div className="w-full h-2.5 bg-black/80 rounded-full overflow-hidden border border-white/10">
+                    <div 
+                      className={`h-full rounded-full transition-all duration-700 ${
+                        isSurplus 
+                          ? 'bg-gradient-to-r from-emerald-500 via-teal-400 to-[#E63946]'
+                          : 'bg-gradient-to-r from-rose-600 to-amber-500'
+                      }`}
+                      style={{ width: `${Math.min(100, (powerProducing / (powerNeeded || 1)) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* In-State City Switcher */}
+                {availableCities.length > 1 && (
+                  <div className="mt-5 pt-4 border-t border-white/10 flex flex-wrap items-center gap-2">
+                    <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold flex items-center gap-1.5 mr-1">
+                      <Building2 size={13} className="text-[#E63946]" /> Switch District in {stateTitle}:
+                    </span>
+                    {availableCities.map((c) => {
+                      const isCurrent = location.name.toLowerCase().includes(c.name.toLowerCase());
+                      return (
+                        <button
+                          key={c.name}
+                          onClick={() => setLocation({ name: `${c.name}, ${stateTitle}`, lat: c.lat, lon: c.lon })}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                            isCurrent
+                              ? 'bg-[#E63946] text-white border-[#E63946] shadow-[0_0_12px_rgba(230,57,70,0.4)]'
+                              : 'bg-black/50 text-gray-400 border-white/10 hover:border-[#E63946]/50 hover:text-white'
+                          }`}
+                        >
+                          {c.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* 4 Multi-Source Generation Cards Grid */}
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <div className="flex items-center gap-2">
+                    <Zap size={16} className="text-[#E63946]" />
+                    <h3 className="text-sm font-exo font-bold text-white uppercase tracking-wider">
+                      Energy Generation Assets
+                    </h3>
+                  </div>
+                  <span className="text-xs text-gray-400">Click any asset for mechanism breakdown</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {energyCards.map((card, i) => {
+                    const Icon = card.icon;
+                    return (
+                      <motion.div
+                        key={card.key}
+                        custom={i}
+                        variants={cardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        whileHover={{ scale: 1.02, y: -3 }}
+                        onClick={() => setActiveModal(card.key)}
+                        className={`relative overflow-hidden rounded-3xl p-5 cursor-pointer transition-all duration-300 bg-gradient-to-b ${card.gradient} border border-white/10 hover:border-[#E63946]/60 group`}
+                        style={{ boxShadow: '0 4px 25px rgba(0,0,0,0.5)' }}
+                      >
+                        <Icon size={80} className="absolute -top-2 -right-2 text-white/[0.03] group-hover:text-[#E63946]/[0.08] transition-all duration-500 group-hover:rotate-12 pointer-events-none" />
+
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-white">
+                              <Icon size={16} style={{ color: card.accentColor }} />
+                            </div>
+                            <div>
+                              <h4 className="text-white font-bold text-xs tracking-wider uppercase leading-none">{card.title}</h4>
+                              <span className="text-[9px] text-gray-500 uppercase tracking-widest">{card.subtitle}</span>
+                            </div>
+                          </div>
+                          <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border ${card.badgeClass}`}>
+                            {((card.value / (totalOutput || 1)) * 100).toFixed(0)}%
+                          </span>
+                        </div>
+
+                        <div className="mt-3 mb-1">
+                          <span className="text-3xl font-exo font-bold text-white">
+                            {card.value.toFixed(2)}
+                          </span>
+                          <span className="text-xs text-gray-400 ml-1">kW</span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[10px] text-gray-400 mb-1">
+                          <div className="flex items-center gap-1">
+                            <Thermometer size={10} className="text-[#E63946]" />
+                            <span>{card.weatherLabel}:</span>
+                            <strong className="text-white">{card.weather}</strong>
+                          </div>
+                          <span className="text-gray-500">{card.extra}</span>
+                        </div>
+
+                        <LiveMeter value={card.value} max={card.max} showStats={true} />
+
+                        <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-xs">
+                          <span className="text-[10px] text-[#E63946] font-bold uppercase tracking-wider group-hover:tracking-widest transition-all">
+                            Technical Specs →
+                          </span>
+                          <ArrowUpRight size={14} className="text-gray-500 group-hover:text-[#E63946] transition-colors" />
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Quick Nav Row to Deep Dive Views */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Power Stations Card */}
+                <div 
+                  onClick={() => setActiveTab('stations')}
+                  className="p-5 rounded-3xl border border-white/10 hover:border-[#E63946]/50 bg-black/60 hover:bg-white/[0.02] cursor-pointer transition-all group flex justify-between items-center"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-2xl bg-[#E63946]/15 border border-[#E63946]/30 text-[#E63946]">
+                      <Layers size={20} />
+                    </div>
+                    <div>
+                      <h4 className="font-exo font-bold text-sm text-white group-hover:text-[#E63946] transition-colors">
+                        Supply Power Stations
+                      </h4>
+                      <p className="text-[10px] text-gray-400">{regionalPlants.length} Regional Stations Identified</p>
+                    </div>
+                  </div>
+                  <ChevronRight size={18} className="text-gray-500 group-hover:translate-x-1 transition-transform" />
+                </div>
+
+                {/* Telemetry & AI Forecast Card */}
+                <div 
+                  onClick={() => setActiveTab('analytics')}
+                  className="p-5 rounded-3xl border border-white/10 hover:border-[#E63946]/50 bg-black/60 hover:bg-white/[0.02] cursor-pointer transition-all group flex justify-between items-center"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+                      <Activity size={20} />
+                    </div>
+                    <div>
+                      <h4 className="font-exo font-bold text-sm text-white group-hover:text-emerald-400 transition-colors">
+                        12H AI Forecast & Curve
+                      </h4>
+                      <p className="text-[10px] text-gray-400">{safeNum(forecastData?.predictedEnergy).toFixed(1)} kW Trend Projection</p>
+                    </div>
+                  </div>
+                  <ChevronRight size={18} className="text-gray-500 group-hover:translate-x-1 transition-transform" />
+                </div>
+
+                {/* Battery Storage Card */}
+                <div 
+                  onClick={() => setActiveTab('storage')}
+                  className="p-5 rounded-3xl border border-white/10 hover:border-[#E63946]/50 bg-black/60 hover:bg-white/[0.02] cursor-pointer transition-all group flex justify-between items-center"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400">
+                      <BatteryCharging size={20} />
+                    </div>
+                    <div>
+                      <h4 className="font-exo font-bold text-sm text-white group-hover:text-cyan-400 transition-colors">
+                        BESS Storage System
+                      </h4>
+                      <p className="text-[10px] text-gray-400">{energyData?.current?.battery?.socPercent || '78'}% SoC • 500 kWh</p>
+                    </div>
+                  </div>
+                  <ChevronRight size={18} className="text-gray-500 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+
+            </motion.div>
+          )}
+
+          {/* ── TAB 2: POWER STATIONS INFRASTRUCTURE ── */}
+          {activeTab === 'stations' && (
+            <motion.div key="stations" variants={tabVariants} initial="initial" animate="animate" exit="exit" className="space-y-6">
+              
+              <div className="rounded-3xl p-6 md:p-8 border border-white/10 bg-gradient-to-br from-black/80 to-zinc-950/90 backdrop-blur-xl">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-white/10">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Layers size={16} className="text-[#E63946]" />
+                      <span className="text-[10px] text-[#E63946] font-bold tracking-[0.25em] uppercase">
+                        Regional Generation Assets
+                      </span>
+                    </div>
+                    <h2 className="text-2xl md:text-3xl font-exo font-bold text-white">
+                      Power Stations Supplying <span className="text-[#E63946]">{location.name}</span>
+                    </h2>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Grid Sector: {energyData?.regionalInfrastructure?.regionName || stateTitle}
+                    </p>
+                  </div>
+
+                  {/* Filter tabs */}
+                  <div className="flex flex-wrap gap-1.5 p-1 rounded-2xl bg-white/[0.03] border border-white/10">
+                    {[
+                      { id: 'all', label: 'All Stations' },
+                      { id: 'nuclear', label: 'Nuclear' },
+                      { id: 'solar', label: 'Solar' },
+                      { id: 'wind', label: 'Wind' },
+                      { id: 'ocean', label: 'Ocean/Hydro' },
+                    ].map((tab) => (
+                      <button
+                        key={tab.id}
+                        onClick={() => setStationFilter(tab.id)}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                          stationFilter === tab.id
+                            ? 'bg-[#E63946] text-white shadow-[0_0_15px_rgba(230,57,70,0.4)]'
+                            : 'text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Stations List Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6">
+                  {filteredPlants.map((plant) => {
+                    const Icon = plant.type === 'nuclear' ? Atom : plant.type === 'solar' ? Sun : plant.type === 'wind' ? Wind : Droplets;
+                    return (
+                      <div
+                        key={plant.id}
+                        className="rounded-2xl p-5 border border-white/10 bg-white/[0.02] hover:border-[#E63946]/50 transition-all group relative overflow-hidden"
+                      >
+                        <Icon size={90} className="absolute -right-3 -bottom-3 text-white/[0.02] group-hover:text-[#E63946]/[0.06] transition-colors pointer-events-none" />
+
+                        <div className="flex justify-between items-start gap-3 mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2.5 rounded-xl bg-[#E63946]/10 border border-[#E63946]/25 text-[#E63946]">
+                              <Icon size={20} />
+                            </div>
+                            <div>
+                              <h4 className="text-white font-exo font-bold text-base group-hover:text-[#E63946] transition-colors">
+                                {plant.name}
+                              </h4>
+                              <div className="flex items-center gap-1.5 text-xs text-gray-400 mt-0.5">
+                                <MapPin size={12} className="text-[#E63946]" />
+                                <span>{plant.location}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <span className="text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-gray-300">
+                            {plant.type}
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-gray-300/90 leading-relaxed mb-4">
+                          {plant.description}
+                        </p>
+
+                        <div className="grid grid-cols-3 gap-2 pt-3 border-t border-white/10 text-xs">
+                          <div>
+                            <span className="text-[9px] text-gray-500 uppercase tracking-widest block">Rated Capacity</span>
+                            <span className="text-sm font-exo font-bold text-white">{plant.capacityMw} MW</span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] text-gray-500 uppercase tracking-widest block">Live Output</span>
+                            <span className="text-sm font-exo font-bold text-[#E63946]">{plant.currentOutputKw} kW</span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] text-gray-500 uppercase tracking-widest block">Grid Share</span>
+                            <span className="text-sm font-exo font-bold text-emerald-400">{plant.outputSharePercent}%</span>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 pt-2 border-t border-white/5 flex items-center justify-between text-[10px] text-gray-400">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-gray-300 font-mono">{plant.status}</span>
+                          </div>
+                          <span className="font-mono text-gray-500 truncate max-w-[180px]">{plant.technology}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+            </motion.div>
+          )}
+
+          {/* ── TAB 3: DEMAND & GRID BALANCE ── */}
+          {activeTab === 'balance' && (
+            <motion.div key="balance" variants={tabVariants} initial="initial" animate="animate" exit="exit" className="space-y-6">
+              
+              <div className="rounded-3xl p-6 md:p-8 border border-white/10 bg-gradient-to-br from-black/80 to-zinc-950/90 backdrop-blur-xl space-y-6">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-white/10">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Gauge size={16} className="text-[#E63946]" />
+                      <span className="text-[10px] text-[#E63946] font-bold tracking-[0.25em] uppercase">
+                        Load Balancing & Dispatch Telemetry
+                      </span>
+                    </div>
+                    <h2 className="text-2xl md:text-3xl font-exo font-bold text-white">
+                      Demand vs Generation in <span className="text-[#E63946]">{location.name}</span>
+                    </h2>
+                  </div>
+
+                  <div className={`px-4 py-2 rounded-2xl border text-xs font-bold font-mono ${
+                    isSurplus ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                  }`}>
+                    {isSurplus ? 'STATUS: STABLE TRANSMISSION EXPORT' : 'STATUS: SUBSTATION LOAD BUFFERING'}
+                  </div>
+                </div>
+
+                {/* Detailed 4 Metric Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                    <span className="text-[10px] text-gray-400 uppercase tracking-widest block font-bold">Required Demand</span>
+                    <span className="text-3xl font-exo font-bold text-white mt-1 block">{powerNeeded.toFixed(1)} kW</span>
+                    <span className="text-[10px] text-gray-500 mt-1 block">Diurnal consumption target</span>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-white/[0.02] border border-[#E63946]/30">
+                    <span className="text-[10px] text-[#E63946] uppercase tracking-widest block font-bold">Active Generation</span>
+                    <span className="text-3xl font-exo font-bold text-[#E63946] mt-1 block">{powerProducing.toFixed(1)} kW</span>
+                    <span className="text-[10px] text-gray-500 mt-1 block">Live aggregated supply</span>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                    <span className="text-[10px] text-gray-400 uppercase tracking-widest block font-bold">Net Balance Margin</span>
+                    <span className={`text-3xl font-exo font-bold mt-1 block ${isSurplus ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {isSurplus ? `+${gridBalance.toFixed(1)}` : gridBalance.toFixed(1)} kW
+                    </span>
+                    <span className="text-[10px] text-gray-500 mt-1 block">{isSurplus ? 'Direct BESS storage flow' : 'Battery draw active'}</span>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                    <span className="text-[10px] text-gray-400 uppercase tracking-widest block font-bold">Load Coverage Ratio</span>
+                    <span className="text-3xl font-exo font-bold text-white mt-1 block">{coveragePercent}%</span>
+                    <span className="text-[10px] text-emerald-400 mt-1 block">Grid frequency synchronized</span>
+                  </div>
+                </div>
+
+                {/* State Wide Cities Grid Switcher */}
+                <div className="pt-4 border-t border-white/10">
+                  <h4 className="text-xs font-bold text-gray-300 uppercase tracking-wider mb-3">
+                    All District Nodes in {stateTitle} Grid:
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                    {availableCities.map((c) => {
+                      const isCurrent = location.name.toLowerCase().includes(c.name.toLowerCase());
+                      return (
+                        <button
+                          key={c.name}
+                          onClick={() => setLocation({ name: `${c.name}, ${stateTitle}`, lat: c.lat, lon: c.lon })}
+                          className={`p-3 rounded-2xl text-left border transition-all ${
+                            isCurrent
+                              ? 'bg-[#E63946] text-white border-[#E63946] shadow-[0_0_15px_rgba(230,57,70,0.4)]'
+                              : 'bg-white/[0.02] border-white/5 hover:border-[#E63946]/50 text-gray-300 hover:text-white'
+                          }`}
+                        >
+                          <div className="font-exo font-bold text-xs">{c.name}</div>
+                          <div className="text-[9px] text-gray-400 mt-0.5">{c.tag || 'District Node'}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+            </motion.div>
+          )}
+
+          {/* ── TAB 4: TELEMETRY & AI FORECAST ── */}
+          {activeTab === 'analytics' && (
+            <motion.div key="analytics" variants={tabVariants} initial="initial" animate="animate" exit="exit" className="space-y-6">
+              
+              <div className="rounded-3xl p-6 md:p-8 border border-white/10 bg-gradient-to-br from-black/80 to-zinc-950/90 backdrop-blur-xl space-y-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-white/10">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Activity size={16} className="text-[#E63946]" />
+                      <span className="text-[10px] text-[#E63946] font-bold tracking-[0.25em] uppercase">
+                        Real-Time Generation Analytics
+                      </span>
+                    </div>
+                    <h2 className="text-2xl md:text-3xl font-exo font-bold text-white">
+                      12-Hour Telemetry Curve & AI Forecast
+                    </h2>
+                  </div>
+
+                  {/* Filter Tabs */}
+                  <div className="flex gap-1 rounded-2xl p-1 bg-white/[0.03] border border-white/10">
+                    {[
+                      { key: 'combined', label: 'NET OUTPUT' },
+                      { key: 'solar', label: 'SOLAR' },
+                      { key: 'wind', label: 'WIND' },
+                      { key: 'ocean', label: 'OCEAN' },
+                      { key: 'nuclear', label: 'NUCLEAR' },
+                    ].map(btn => (
+                      <button
+                        key={btn.key}
+                        onClick={() => setViewMode(btn.key)}
+                        className={`px-3 py-1.5 text-[10px] rounded-xl transition-all font-bold tracking-wider uppercase ${
+                          viewMode === btn.key
+                            ? 'bg-[#E63946] text-white shadow-[0_0_12px_rgba(230,57,70,0.4)]'
+                            : 'text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        {btn.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Main Graph */}
+                <div className="w-full h-[320px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                      <defs>
+                        <linearGradient id="curveGlow" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#E63946" stopOpacity={0.5} />
+                          <stop offset="95%" stopColor="#E63946" stopOpacity={0.0} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="time" stroke="#555" fontSize={10} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#555" fontSize={10} tickLine={false} axisLine={false} width={40} />
+                      <Tooltip
+                        contentStyle={{ 
+                          backgroundColor: 'rgba(12,12,12,0.95)', 
+                          border: '1px solid #E63946', 
+                          borderRadius: '12px', 
+                          boxShadow: '0 0 25px rgba(230,57,70,0.3)',
+                          padding: '10px 14px'
+                        }}
+                        itemStyle={{ color: '#E63946', fontWeight: 'bold', fontSize: 13 }}
+                        labelStyle={{ color: '#888', fontSize: 11, marginBottom: 2 }}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="value" 
+                        stroke="#E63946" 
+                        strokeWidth={3} 
+                        fillOpacity={1} 
+                        fill="url(#curveGlow)" 
+                        isAnimationActive={!hasAnimatedChart}
+                        onAnimationEnd={() => setHasAnimatedChart(true)}
+                        dot={false} 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* 3 AI Analytics Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-white/10">
+                  <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingUp size={16} className="text-[#E63946]" />
+                      <h4 className="text-xs uppercase font-bold text-gray-300 tracking-wider">12H Predictive Peak</h4>
+                    </div>
+                    <div className="text-3xl font-exo font-bold text-white">
+                      {safeNum(forecastData?.predictedEnergy).toFixed(1)} <span className="text-xs text-gray-400">kW</span>
+                    </div>
+                    <span className="text-[10px] text-emerald-400 mt-1 block">Trend: {forecastData?.trend || 'STABLE'}</span>
+                  </div>
+
+                  <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Leaf size={16} className="text-emerald-400" />
+                      <h4 className="text-xs uppercase font-bold text-gray-300 tracking-wider">Avoided Emissions</h4>
+                    </div>
+                    <div className="text-3xl font-exo font-bold text-white">
+                      {energyData?.current?.carbonSavingsKg || '0'} <span className="text-xs text-emerald-400">kg CO₂e</span>
+                    </div>
+                    <span className="text-[10px] text-gray-500 mt-1 block">
+                      Offsetting {(safeNum(energyData?.current?.carbonSavingsKg) * 0.04).toFixed(1)} trees/day
                     </span>
                   </div>
-                  <h3 className="text-xs font-exo font-bold text-white group-hover:text-[#E63946] transition-colors line-clamp-1">
-                    {plant.name}
-                  </h3>
-                  <div className="text-[10px] text-gray-400 mt-0.5 truncate">
-                    {plant.location}
-                  </div>
-                  <div className="mt-2 pt-2 border-t border-gray-800 flex justify-between text-[10px]">
-                    <span className="text-gray-500">Capacity: {plant.capacityMw} MW</span>
-                    <span className="text-white font-bold">{plant.currentOutputKw} kW</span>
+
+                  <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Cpu size={16} className="text-[#E63946]" />
+                      <h4 className="text-xs uppercase font-bold text-gray-300 tracking-wider">AI Grid Diagnosis</h4>
+                    </div>
+                    <p className="text-xs text-gray-300 italic leading-relaxed">
+                      "{energyData?.insight || 'Grid telemetry synchronized.'}"
+                    </p>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </motion.div>
+              </div>
 
-        {/* ── MAIN TELEMETRY GRID ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            </motion.div>
+          )}
 
-          {/* LEFT COLUMN: Energy Generation Cards */}
-          <div className="lg:col-span-5 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {energyCards.map((card, i) => {
-                const Icon = card.icon;
-                return (
-                  <motion.div
-                    key={card.key}
-                    custom={i}
-                    variants={cardVariants}
-                    initial="hidden"
-                    animate="visible"
-                    whileHover={{ scale: 1.02, y: -3 }}
-                    onClick={() => setActiveModal(card.key)}
-                    className={`relative overflow-hidden rounded-2xl p-5 cursor-pointer transition-all duration-300 bg-gradient-to-b ${card.gradient} ${card.borderHover} group`}
-                    style={{
-                      border: '1px solid rgba(230,57,70,0.15)',
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-                    }}
-                  >
-                    <Icon size={72} className="absolute -top-1 -right-1 text-[#E63946] opacity-[0.05] group-hover:opacity-[0.12] transition-all duration-500 group-hover:rotate-12" />
-
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="p-1.5 rounded-lg bg-[#E63946]/10 border border-[#E63946]/20">
-                        <Icon size={14} className="text-[#E63946]" />
-                      </div>
-                      <div>
-                        <h3 className="text-white font-bold text-xs tracking-widest uppercase leading-none">{card.title}</h3>
-                        <span className="text-[9px] text-gray-500 uppercase tracking-widest">{card.subtitle}</span>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 mb-1">
-                      <span className="text-3xl font-exo font-bold text-white">
-                        {card.value.toFixed(2)}
-                      </span>
-                      <span className="text-xs text-gray-400 ml-1">kW</span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-[10px] text-gray-400 mb-1">
-                      <div className="flex items-center gap-1">
-                        <Thermometer size={10} className="text-[#E63946]" />
-                        <span>{card.weatherLabel}:</span>
-                        <strong className="text-white">{card.weather}</strong>
-                      </div>
-                      <span className="text-gray-500">{card.extra}</span>
-                    </div>
-
-                    <LiveMeter value={card.value} max={card.max} showStats={true} />
-
-                    <div className="mt-3 pt-2 border-t border-gray-800/60 flex items-center justify-between">
-                      <span className="text-[10px] text-[#E63946] font-bold uppercase tracking-wider group-hover:tracking-widest transition-all">
-                        Technical Specs →
-                      </span>
-                      <span className="text-[9px] text-gray-500 font-mono">
-                        {((card.value / (totalOutput || 1)) * 100).toFixed(0)}% Net
-                      </span>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-
-            {/* Battery Energy Storage System (BESS) Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl p-5 border border-gray-800/80 bg-gradient-to-br from-black/80 to-zinc-950/80"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
-                    <BatteryCharging size={16} />
-                  </div>
+          {/* ── TAB 5: BESS STORAGE ── */}
+          {activeTab === 'storage' && (
+            <motion.div key="storage" variants={tabVariants} initial="initial" animate="animate" exit="exit" className="space-y-6">
+              
+              <div className="rounded-3xl p-6 md:p-8 border border-white/10 bg-gradient-to-br from-black/80 to-zinc-950/90 backdrop-blur-xl space-y-6">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-white/10">
                   <div>
-                    <h3 className="text-xs font-exo font-bold text-white uppercase tracking-wider">
-                      Grid Battery Storage (BESS)
-                    </h3>
-                    <span className="text-[9px] text-gray-500 uppercase tracking-widest">Utility Lithium-Iron Buffer</span>
+                    <div className="flex items-center gap-2 mb-1">
+                      <BatteryCharging size={16} className="text-cyan-400" />
+                      <span className="text-[10px] text-cyan-400 font-bold tracking-[0.25em] uppercase">
+                        Battery Energy Storage System (BESS)
+                      </span>
+                    </div>
+                    <h2 className="text-2xl md:text-3xl font-exo font-bold text-white">
+                      Utility-Scale LFP Storage Unit
+                    </h2>
+                  </div>
+
+                  <span className="px-3.5 py-1.5 rounded-full text-xs font-mono font-bold bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
+                    STATUS: {energyData?.current?.battery?.status || 'CHARGING'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 text-center">
+                    <span className="text-[10px] text-gray-400 uppercase tracking-widest block font-bold">State of Charge (SoC)</span>
+                    <span className="text-4xl font-exo font-bold text-white mt-2 block">{energyData?.current?.battery?.socPercent || '78.5'}%</span>
+                    <span className="text-[10px] text-cyan-400 mt-1 block">Optimal reserve threshold</span>
+                  </div>
+                  <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 text-center">
+                    <span className="text-[10px] text-gray-400 uppercase tracking-widest block font-bold">Charge / Discharge Flow</span>
+                    <span className="text-4xl font-exo font-bold text-emerald-400 mt-2 block">{energyData?.current?.battery?.flowKw || '+14.2'} kW</span>
+                    <span className="text-[10px] text-gray-500 mt-1 block">Active substation buffer</span>
+                  </div>
+                  <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 text-center">
+                    <span className="text-[10px] text-gray-400 uppercase tracking-widest block font-bold">Total Storage Capacity</span>
+                    <span className="text-4xl font-exo font-bold text-white mt-2 block">500 kWh</span>
+                    <span className="text-[10px] text-gray-500 mt-1 block">Utility Lithium-Iron Array</span>
                   </div>
                 </div>
-                <span className={`px-2 py-0.5 text-[9px] rounded-full font-mono font-bold border ${
-                  energyData?.current?.battery?.status === 'CHARGING'
-                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                    : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                }`}>
-                  {energyData?.current?.battery?.status || 'CHARGING'}
-                </span>
-              </div>
 
-              <div className="grid grid-cols-3 gap-2 text-center pt-1 pb-3">
-                <div className="p-2 rounded-xl bg-white/[0.02] border border-gray-800/50">
-                  <span className="text-[9px] text-gray-500 uppercase tracking-widest block">State of Charge</span>
-                  <span className="text-lg font-exo font-bold text-white">
-                    {energyData?.current?.battery?.socPercent || '78.5'}%
-                  </span>
-                </div>
-                <div className="p-2 rounded-xl bg-white/[0.02] border border-gray-800/50">
-                  <span className="text-[9px] text-gray-500 uppercase tracking-widest block">Net Flow</span>
-                  <span className={`text-lg font-exo font-bold ${
-                    Number(energyData?.current?.battery?.flowKw) >= 0 ? 'text-emerald-400' : 'text-amber-400'
-                  }`}>
-                    {energyData?.current?.battery?.flowKw || '+12.4'} kW
-                  </span>
-                </div>
-                <div className="p-2 rounded-xl bg-white/[0.02] border border-gray-800/50">
-                  <span className="text-[9px] text-gray-500 uppercase tracking-widest block">Storage Cap</span>
-                  <span className="text-lg font-exo font-bold text-white">
-                    500 kWh
-                  </span>
-                </div>
-              </div>
-
-              {/* Progress bar */}
-              <div className="w-full h-2 bg-black/80 rounded-full overflow-hidden border border-gray-800">
-                <div 
-                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-700"
-                  style={{ width: `${energyData?.current?.battery?.socPercent || 78}%` }}
-                />
-              </div>
-            </motion.div>
-          </div>
-
-          {/* RIGHT COLUMN: Graph + Forecast + Environment Stats */}
-          <div className="lg:col-span-7 space-y-5 flex flex-col">
-
-            {/* Live Chart Panel */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="flex-grow flex flex-col rounded-2xl p-5 md:p-6 relative border border-[#E63946]/15 bg-gradient-to-b from-black/80 to-zinc-950/90"
-              style={{
-                boxShadow: '0 4px 30px rgba(0,0,0,0.4)'
-              }}
-            >
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-3">
                 <div>
-                  <h2 className="text-base md:text-lg font-exo font-bold flex items-center gap-2 text-white">
-                    <Activity size={18} className="text-[#E63946]" /> Real-Time Telemetry Curve
-                  </h2>
-                  <p className="text-[10px] text-gray-400 tracking-widest uppercase mt-0.5">
-                    12-Hour continuous output log for {location.name}
-                  </p>
-                </div>
-
-                {/* Filter Selector Tabs */}
-                <div className="flex gap-1 rounded-xl p-1 bg-black/80 border border-gray-800">
-                  {[
-                    { key: 'combined', label: 'NET' },
-                    { key: 'solar', label: 'SOL' },
-                    { key: 'wind', label: 'WND' },
-                    { key: 'ocean', label: 'OCN' },
-                    { key: 'nuclear', label: 'NKR' },
-                  ].map(btn => (
-                    <button
-                      key={btn.key}
-                      onClick={() => setViewMode(btn.key)}
-                      className={`px-3 py-1 text-[10px] rounded-lg transition-all font-bold tracking-widest uppercase ${
-                        viewMode === btn.key
-                          ? 'bg-[#E63946] text-white shadow-[0_0_12px_rgba(230,57,70,0.5)]'
-                          : 'text-gray-400 hover:text-white'
-                      }`}
-                    >
-                      {btn.label}
-                    </button>
-                  ))}
+                  <div className="flex justify-between text-xs text-gray-400 mb-2">
+                    <span>Battery Level</span>
+                    <span>{energyData?.current?.battery?.socPercent || 78}% Charged</span>
+                  </div>
+                  <div className="w-full h-4 bg-black/80 rounded-full overflow-hidden border border-white/10">
+                    <div 
+                      className="h-full bg-gradient-to-r from-teal-500 to-cyan-400 rounded-full transition-all duration-700"
+                      style={{ width: `${energyData?.current?.battery?.socPercent || 78}%` }}
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Chart Canvas */}
-              <div className="flex-grow w-full min-h-[260px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData}>
-                    <defs>
-                      <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#E63946" stopOpacity={0.45} />
-                        <stop offset="95%" stopColor="#E63946" stopOpacity={0.0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="time" stroke="#444" fontSize={9} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#444" fontSize={9} tickLine={false} axisLine={false} width={35} />
-                    <Tooltip
-                      contentStyle={{ 
-                        backgroundColor: 'rgba(10,10,10,0.95)', 
-                        border: '1px solid #E63946', 
-                        borderRadius: '8px', 
-                        boxShadow: '0 0 20px rgba(230,57,70,0.3)',
-                        padding: '8px 12px'
-                      }}
-                      itemStyle={{ color: '#E63946', fontWeight: 'bold', fontSize: 12 }}
-                      labelStyle={{ color: '#888', fontSize: 10, marginBottom: 2 }}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="value" 
-                      stroke="#E63946" 
-                      strokeWidth={2.5} 
-                      fillOpacity={1} 
-                      fill="url(#colorValue)" 
-                      isAnimationActive={!hasAnimatedChart}
-                      onAnimationEnd={() => setHasAnimatedChart(true)}
-                      dot={false} 
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
             </motion.div>
+          )}
+        </AnimatePresence>
 
-            {/* Bottom 3 Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-              {/* 12H Predictive Forecast */}
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="rounded-2xl p-5 border border-[#E63946]/20 bg-gradient-to-br from-[#1a0505]/60 to-black/80"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp size={14} className="text-[#E63946]" />
-                  <h3 className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">12H AI Forecast</h3>
-                </div>
-                <div className="text-3xl font-exo font-bold text-white">
-                  {safeNum(forecastData?.predictedEnergy).toFixed(1)}
-                  <span className="text-xs font-normal text-gray-400 ml-1">kW</span>
-                </div>
-                <div className="mt-3 pt-2 border-t border-gray-800/60 flex justify-between text-xs">
-                  <span className="text-gray-500 uppercase tracking-widest text-[9px]">Trend</span>
-                  <span className={`font-bold uppercase tracking-widest text-[10px] ${
-                    forecastData?.trend === 'increasing' ? 'text-emerald-400' : 'text-[#E63946]'
-                  }`}>
-                    {forecastData?.trend || 'STABLE'}
-                  </span>
-                </div>
-              </motion.div>
-
-              {/* Carbon Offset */}
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="rounded-2xl p-5 border border-gray-800/80 bg-black/60"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Leaf size={14} className="text-emerald-400" />
-                  <h3 className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Carbon Offset</h3>
-                </div>
-                <div className="text-3xl font-bold text-white">
-                  {energyData?.current?.carbonSavingsKg || '0'}
-                  <span className="text-xs text-emerald-400 ml-1">kg CO₂</span>
-                </div>
-                <div className="mt-3 pt-2 border-t border-gray-800/60 text-[10px] text-gray-400">
-                  Offsetting <strong>{(safeNum(energyData?.current?.carbonSavingsKg) * 0.04).toFixed(1)} trees</strong>/day
-                </div>
-              </motion.div>
-
-              {/* AI Autonomous Insight */}
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="rounded-2xl p-5 border border-gray-800/80 bg-black/60 flex flex-col justify-between"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Activity size={14} className="text-[#E63946]" />
-                  <h3 className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Grid AI Diagnosis</h3>
-                </div>
-                <p className="text-xs text-gray-300 italic leading-relaxed">
-                  "{energyData?.insight || 'Grid telemetry operational.'}"
-                </p>
-                <div className="mt-2 pt-2 border-t border-gray-800/60 flex items-center gap-1.5">
-                  <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[9px] text-gray-500 uppercase tracking-widest">Autonomous Balancer</span>
-                </div>
-              </motion.div>
-
-            </div>
-
-          </div>
-        </div>
-
-      </div>
+      </main>
     </div>
   );
 }
