@@ -4,8 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { 
   Settings, Zap, Wind, Sun, AlertTriangle, Activity, Droplets, Atom, 
-  MapPin, Thermometer, Gauge, TrendingUp, Leaf, Battery, BatteryCharging, 
-  Layers, RefreshCw, ChevronRight, ShieldCheck, Compass, Radio
+  MapPin, Thermometer, Gauge, TrendingUp, Leaf, BatteryCharging, 
+  Layers, RefreshCw, ChevronRight, CheckCircle2, AlertOctagon,
+  TrendingDown, Building2
 } from 'lucide-react';
 import NetworkBackground from './components/NetworkBackground';
 import SettingsModal from './components/SettingsModal';
@@ -22,7 +23,7 @@ const cardVariants = {
 };
 
 function App() {
-  const [location, setLocation] = useState({ name: 'Chennai', lat: 13.0827, lon: 80.2707 });
+  const [location, setLocation] = useState({ name: 'Chennai, Tamil Nadu', lat: 13.0827, lon: 80.2707 });
   const [energyData, setEnergyData] = useState(null);
   const [forecastData, setForecastData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -144,6 +145,14 @@ function App() {
   }, [energyCards]);
 
   const regionalPlants = energyData?.regionalInfrastructure?.plants || [];
+  const availableCities = energyData?.availableCities || [];
+  const stateTitle = energyData?.stateName || 'State Grid';
+
+  const powerNeeded = safeNum(energyData?.current?.powerNeededKw || 280);
+  const powerProducing = safeNum(energyData?.current?.powerProducingKw || totalOutput);
+  const gridBalance = safeNum(energyData?.current?.gridBalanceKw || (powerProducing - powerNeeded));
+  const isSurplus = gridBalance >= 0;
+  const coveragePercent = safeNum(energyData?.current?.coveragePercent || 100);
 
   if (!energyData && loading) {
     return (
@@ -164,7 +173,7 @@ function App() {
             />
           </div>
           <div className="text-white text-lg font-exo font-bold tracking-widest uppercase">
-            Initializing Nexus Grid Core...
+            Initializing State Grid Telemetry...
           </div>
           <div className="w-48 h-1 bg-gray-800 rounded-full overflow-hidden">
             <motion.div
@@ -179,7 +188,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-x-hidden text-white bg-[#060606] selection:bg-[#E63946] selection:text-white pb-12">
+    <div className="min-h-screen relative overflow-x-hidden text-white bg-[#060606] selection:bg-[#E63946] selection:text-white pb-14">
       <NetworkBackground />
       
       <SettingsModal 
@@ -244,34 +253,27 @@ function App() {
                   LIVE 50.0Hz
                 </span>
               </div>
-              <p className="text-[10px] text-gray-400 tracking-[0.2em] uppercase">Intelligent Energy & Power Plant Infrastructure</p>
+              <p className="text-[10px] text-gray-400 tracking-[0.2em] uppercase">
+                {stateTitle} Power Demand & Generation System
+              </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-2.5 md:gap-3">
-            {/* Total Net Output Badge */}
-            <div className="px-4 py-2 rounded-xl flex items-center gap-2.5 bg-[#E63946]/10 border border-[#E63946]/30">
-              <Gauge size={16} className="text-[#E63946]" />
-              <div className="text-left">
-                <span className="text-[9px] text-gray-400 uppercase tracking-widest block leading-none">Net Grid Output</span>
-                <span className="text-sm font-exo font-bold text-white">{totalOutput.toFixed(1)} kW</span>
-              </div>
-            </div>
-
             {/* Quick Regional Plants Launcher */}
             <button
               onClick={() => setIsRegionalModalOpen(true)}
-              className="group flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-800 hover:border-[#E63946] bg-black/50 hover:bg-[#E63946]/10 transition-all duration-300"
+              className="group flex items-center gap-2 px-3.5 py-2 rounded-xl border border-gray-800 hover:border-[#E63946] bg-black/50 hover:bg-[#E63946]/10 transition-all duration-300"
               title="Inspect power stations feeding this location"
             >
               <Layers size={16} className="text-[#E63946] group-hover:scale-110 transition-transform" />
               <div className="text-left">
-                <span className="text-[9px] text-gray-400 uppercase tracking-widest block leading-none">Supply Plants</span>
-                <span className="text-xs font-bold text-white">{regionalPlants.length} Stations</span>
+                <span className="text-[9px] text-gray-400 uppercase tracking-widest block leading-none">Power Stations</span>
+                <span className="text-xs font-bold text-white">{regionalPlants.length} Units</span>
               </div>
             </button>
 
-            {/* Location Selector Button */}
+            {/* State & City Location Selector Button */}
             <button
               onClick={() => setIsLocationModalOpen(true)}
               className="group flex items-center gap-2.5 px-4 py-2.5 rounded-xl font-bold transition-all duration-300 bg-gradient-to-r from-[#E63946] to-[#c0392b] hover:shadow-[0_0_30px_rgba(230,57,70,0.6)]"
@@ -281,8 +283,8 @@ function App() {
             >
               <MapPin size={16} className="text-white group-hover:animate-bounce" />
               <div className="flex flex-col text-left">
-                <span className="text-[9px] uppercase text-white/70 tracking-widest leading-none">Target Node</span>
-                <span className="text-xs md:text-sm text-white truncate max-w-[140px]">{location.name}</span>
+                <span className="text-[9px] uppercase text-white/70 tracking-widest leading-none">Active State / City</span>
+                <span className="text-xs md:text-sm text-white truncate max-w-[150px]">{location.name}</span>
               </div>
             </button>
 
@@ -307,6 +309,142 @@ function App() {
           </div>
         </motion.header>
 
+        {/* ── POWER NEEDED (DEMAND) VS POWER PRODUCING (SUPPLY) BALANCE WIDGET ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl p-5 md:p-6 border border-[#E63946]/30 bg-gradient-to-br from-[#1c0606]/90 via-black/95 to-zinc-950/90 relative overflow-hidden"
+          style={{
+            boxShadow: '0 4px 30px rgba(230,57,70,0.15)'
+          }}
+        >
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4 pb-4 border-b border-gray-800/80">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Gauge size={18} className="text-[#E63946]" />
+                <span className="text-xs font-bold text-[#E63946] tracking-[0.2em] uppercase">
+                  Real-Time Grid Balance Matrix
+                </span>
+              </div>
+              <h2 className="text-xl md:text-2xl font-exo font-bold text-white">
+                Power Needed vs Power Producing in <span className="text-[#E63946]">{location.name}</span>
+              </h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Target Substation: {energyData?.regionalInfrastructure?.regionName || 'State Transmission Network'}
+              </p>
+            </div>
+
+            {/* Surplus / Deficit Badge */}
+            <div className={`px-4 py-2.5 rounded-xl border flex items-center gap-3 ${
+              isSurplus 
+                ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.2)]'
+                : 'bg-rose-500/10 border-rose-500/40 text-rose-300 shadow-[0_0_20px_rgba(244,63,94,0.2)]'
+            }`}>
+              {isSurplus ? (
+                <CheckCircle2 size={22} className="text-emerald-400 animate-pulse" />
+              ) : (
+                <AlertOctagon size={22} className="text-rose-400 animate-pulse" />
+              )}
+              <div>
+                <span className="text-[10px] uppercase font-bold tracking-widest block leading-none text-gray-400">
+                  Grid Status
+                </span>
+                <span className="text-base font-exo font-bold">
+                  {isSurplus ? `+${gridBalance.toFixed(1)} kW SURPLUS` : `${gridBalance.toFixed(1)} kW DEFICIT`}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 3 Metrics Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+            {/* 1. Needed (Demand) */}
+            <div className="p-4 rounded-xl bg-black/60 border border-gray-800/80">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Power Needed (Demand)</span>
+                <TrendingDown size={14} className="text-amber-400" />
+              </div>
+              <div className="text-2xl md:text-3xl font-exo font-bold text-white">
+                {powerNeeded.toFixed(1)}
+                <span className="text-xs text-gray-500 font-normal ml-1">kW required</span>
+              </div>
+              <p className="text-[10px] text-gray-500 mt-1">Calculated base consumption & diurnal peak load</p>
+            </div>
+
+            {/* 2. Producing (Supply) */}
+            <div className="p-4 rounded-xl bg-black/60 border border-[#E63946]/30">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-[10px] text-[#E63946] uppercase tracking-widest font-bold">Power Producing (Supply)</span>
+                <Zap size={14} className="text-[#E63946]" />
+              </div>
+              <div className="text-2xl md:text-3xl font-exo font-bold text-[#E63946]">
+                {powerProducing.toFixed(1)}
+                <span className="text-xs text-gray-400 font-normal ml-1">kW generating</span>
+              </div>
+              <p className="text-[10px] text-gray-500 mt-1">Real-time output across Solar, Wind, Nuclear & Ocean</p>
+            </div>
+
+            {/* 3. Coverage % */}
+            <div className="p-4 rounded-xl bg-black/60 border border-gray-800/80">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Demand Coverage</span>
+                <Activity size={14} className="text-emerald-400" />
+              </div>
+              <div className="text-2xl md:text-3xl font-exo font-bold text-white">
+                {coveragePercent}%
+                <span className="text-xs text-emerald-400 font-normal ml-1">covered</span>
+              </div>
+              <p className="text-[10px] text-gray-500 mt-1">
+                {coveragePercent >= 100 ? '100% Demand satisfied with export capacity' : 'Substation buffering with battery & imports'}
+              </p>
+            </div>
+          </div>
+
+          {/* Balance Progress Bar */}
+          <div>
+            <div className="flex justify-between text-[10px] text-gray-400 mb-1 font-mono">
+              <span>0 kW (Zero)</span>
+              <span>Baseline Demand: {powerNeeded.toFixed(0)} kW</span>
+              <span>Total Generation: {powerProducing.toFixed(0)} kW</span>
+            </div>
+            <div className="w-full h-3 bg-black/80 rounded-full overflow-hidden border border-gray-800 relative">
+              <div 
+                className={`h-full rounded-full transition-all duration-700 ${
+                  isSurplus 
+                    ? 'bg-gradient-to-r from-emerald-500 via-teal-400 to-[#E63946]'
+                    : 'bg-gradient-to-r from-rose-600 to-amber-500'
+                }`}
+                style={{ width: `${Math.min(100, (powerProducing / (powerNeeded || 1)) * 100)}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Quick Cities in this State Bar */}
+          {availableCities.length > 1 && (
+            <div className="mt-4 pt-3 border-t border-gray-800/80 flex flex-wrap items-center gap-2">
+              <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold flex items-center gap-1 mr-1">
+                <Building2 size={12} className="text-[#E63946]" /> Switch City in {stateTitle}:
+              </span>
+              {availableCities.map((c) => {
+                const isCurrent = location.name.toLowerCase().includes(c.name.toLowerCase());
+                return (
+                  <button
+                    key={c.name}
+                    onClick={() => setLocation({ name: `${c.name}, ${stateTitle}`, lat: c.lat, lon: c.lon })}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all border ${
+                      isCurrent
+                        ? 'bg-[#E63946] text-white border-[#E63946] shadow-[0_0_10px_rgba(230,57,70,0.4)]'
+                        : 'bg-black/50 text-gray-400 border-gray-800 hover:border-[#E63946]/50 hover:text-white'
+                    }`}
+                  >
+                    {c.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </motion.div>
+
         {error && (
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-xl flex items-center gap-3 bg-[#E63946]/15 border border-[#E63946]/40">
             <AlertTriangle size={18} className="text-[#E63946]" /> 
@@ -314,7 +452,7 @@ function App() {
           </motion.div>
         )}
 
-        {/* ── REGIONAL POWER STATIONS STRIP (DIRECT USER FEATURE) ── */}
+        {/* ── REGIONAL POWER STATIONS STRIP ── */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
@@ -326,15 +464,12 @@ function App() {
               <h2 className="text-sm md:text-base font-exo font-bold text-white uppercase tracking-wider">
                 Power Stations Supplying <span className="text-[#E63946]">{location.name}</span>
               </h2>
-              <span className="text-[10px] text-gray-400 hidden sm:inline">
-                ({energyData?.regionalInfrastructure?.regionName || 'Regional Grid'})
-              </span>
             </div>
             <button
               onClick={() => setIsRegionalModalOpen(true)}
               className="text-xs text-[#E63946] hover:text-white flex items-center gap-1 font-bold transition-colors group"
             >
-              <span>View All Station Specs</span>
+              <span>View All Station Specs ({regionalPlants.length} Plants)</span>
               <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
@@ -398,10 +533,8 @@ function App() {
                       boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
                     }}
                   >
-                    {/* Faint Background Icon */}
                     <Icon size={72} className="absolute -top-1 -right-1 text-[#E63946] opacity-[0.05] group-hover:opacity-[0.12] transition-all duration-500 group-hover:rotate-12" />
 
-                    {/* Card Header */}
                     <div className="flex items-center gap-2 mb-1">
                       <div className="p-1.5 rounded-lg bg-[#E63946]/10 border border-[#E63946]/20">
                         <Icon size={14} className="text-[#E63946]" />
@@ -412,7 +545,6 @@ function App() {
                       </div>
                     </div>
 
-                    {/* Main kW Output Value */}
                     <div className="mt-3 mb-1">
                       <span className="text-3xl font-exo font-bold text-white">
                         {card.value.toFixed(2)}
@@ -420,7 +552,6 @@ function App() {
                       <span className="text-xs text-gray-400 ml-1">kW</span>
                     </div>
 
-                    {/* Weather & Secondary Stats */}
                     <div className="flex items-center justify-between text-[10px] text-gray-400 mb-1">
                       <div className="flex items-center gap-1">
                         <Thermometer size={10} className="text-[#E63946]" />
@@ -430,10 +561,8 @@ function App() {
                       <span className="text-gray-500">{card.extra}</span>
                     </div>
 
-                    {/* Live Meter Bar */}
                     <LiveMeter value={card.value} max={card.max} showStats={true} />
 
-                    {/* CTA Link */}
                     <div className="mt-3 pt-2 border-t border-gray-800/60 flex items-center justify-between">
                       <span className="text-[10px] text-[#E63946] font-bold uppercase tracking-wider group-hover:tracking-widest transition-all">
                         Technical Specs →
@@ -637,7 +766,7 @@ function App() {
                   <span className="text-xs text-emerald-400 ml-1">kg CO₂</span>
                 </div>
                 <div className="mt-3 pt-2 border-t border-gray-800/60 text-[10px] text-gray-400">
-                  Equivalent to offsetting <strong>{(safeNum(energyData?.current?.carbonSavingsKg) * 0.04).toFixed(1)} trees</strong>/day
+                  Offsetting <strong>{(safeNum(energyData?.current?.carbonSavingsKg) * 0.04).toFixed(1)} trees</strong>/day
                 </div>
               </motion.div>
 

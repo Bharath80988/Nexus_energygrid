@@ -1,161 +1,354 @@
 import axios from 'axios';
 
-// Comprehensive Database of Real-World Regional Power Plants & Supply Grids
-const REGIONAL_POWER_PLANTS = {
-  chennai: {
-    regionName: "Tamil Nadu Southern Grid",
+// Comprehensive Database of Real-World States, Regions, and Power Plants Infrastructure
+export const REGIONAL_STATES_DATA = {
+  "tamil nadu": {
+    stateName: "Tamil Nadu",
+    regionName: "Tamil Nadu State Transmission Corporation (TANTRANSCO) Grid",
+    baseDemandKw: 310,
+    cities: [
+      { name: "Chennai", lat: 13.0827, lon: 80.2707, demandMultiplier: 1.35, isCapital: true },
+      { name: "Coimbatore", lat: 11.0168, lon: 76.9558, demandMultiplier: 1.15 },
+      { name: "Madurai", lat: 9.9252, lon: 78.1198, demandMultiplier: 1.05 },
+      { name: "Tirunelveli", lat: 8.7139, lon: 77.7567, demandMultiplier: 0.95 },
+      { name: "Tiruchirappalli", lat: 10.7905, lon: 78.7047, demandMultiplier: 1.0 },
+      { name: "Salem", lat: 11.6643, lon: 78.1460, demandMultiplier: 0.95 }
+    ],
     plants: [
       {
         id: "maps-kalpakkam",
         name: "Madras Atomic Power Station (MAPS)",
-        location: "Kalpakkam, Tamil Nadu (~60 km South)",
+        location: "Kalpakkam, Chengalpattu (~60 km South of Chennai)",
         type: "nuclear",
         technology: "Pressurized Heavy Water Reactor (PHWR)",
         capacityMw: 440,
-        currentOutputKw: 0, // dynamic
-        status: "ACTIVE - ONLINE",
+        status: "ACTIVE - BASELOAD 98%",
         icon: "Atom",
-        description: "India's premier nuclear research & power hub providing steady baseload energy to Chennai metropolitan and industrial corridors.",
+        description: "India's premier nuclear power and fast breeder reactor research facility providing uninterrupted clean baseload power.",
         coordinates: [80.1764, 12.5574]
       },
       {
         id: "kudankulam-nps",
-        name: "Kudankulam Nuclear Power Plant",
-        location: "Radhapuram, Tirunelveli, TN",
+        name: "Kudankulam Nuclear Power Plant (KKNPP)",
+        location: "Radhapuram, Tirunelveli, Tamil Nadu",
         type: "nuclear",
-        technology: "VVER-1000 Water-Water Energetic Reactor",
+        technology: "Twin VVER-1000 Water-Water Energetic Reactors",
         capacityMw: 2000,
-        currentOutputKw: 0,
-        status: "ACTIVE - BASELOAD 98%",
+        status: "ACTIVE - 99.2% EFFICIENCY",
         icon: "Atom",
-        description: "Highest-capacity nuclear plant in India, feeding high-voltage 400kV interties to Chennai and Tamil Nadu grid.",
+        description: "The highest-capacity nuclear generating station in India, feeding high-voltage 400kV lines to the state grid.",
         coordinates: [77.7128, 8.1697]
       },
       {
         id: "muppandal-wind",
-        name: "Muppandal & Kayathar Wind Farm Array",
-        location: "Kanyakumari / Thoothukudi, TN",
+        name: "Muppandal Wind Farm Array",
+        location: "Kanyakumari / Aralvaimozhi Pass, Tamil Nadu",
         type: "wind",
-        technology: "Multi-Megawatt Onshore Wind Turbines",
+        technology: "Multi-Megawatt Gearless Wind Turbines",
         capacityMw: 1500,
-        currentOutputKw: 0,
+        status: "HIGH VELOCITY GENERATION",
+        icon: "Wind",
+        description: "One of the largest operational onshore wind farms in the world, capturing high-velocity mountain gap winds.",
+        coordinates: [77.5387, 8.2589]
+      },
+      {
+        id: "kayathar-wind",
+        name: "Kayathar & Shencottah Wind Corridor",
+        location: "Thoothukudi / Tenkasi Districts, Tamil Nadu",
+        type: "wind",
+        technology: "High-Elevation Plateau Wind Turbine Clusters",
+        capacityMw: 450,
         status: "OPERATIONAL",
         icon: "Wind",
-        description: "One of the largest operational onshore wind farms in the world, capturing high-velocity Palghat & Shencottah gap winds.",
-        coordinates: [77.5387, 8.2589]
+        description: "Key wind generation corridor capturing seasonal monsoon pressure gradients across southern Tamil Nadu.",
+        coordinates: [77.7800, 8.9500]
       },
       {
         id: "kamuthi-solar",
         name: "Kamuthi Solar Power Project",
-        location: "Kamuthi, Ramanathapuram, TN",
+        location: "Kamuthi, Ramanathapuram, Tamil Nadu",
         type: "solar",
-        technology: "Utility-Scale Single-Axis Tracking Photovoltaic",
+        technology: "Single-Axis Tracking Utility Photovoltaic Array (2,500 Acres)",
         capacityMw: 648,
-        currentOutputKw: 0,
-        status: "GENERATING",
+        status: "MAX SOLAR HARVEST",
         icon: "Sun",
-        description: "Massive 2,500-acre solar complex supplying peak daytime solar energy into the Tamil Nadu TANTRANSCO power grid.",
+        description: "Massive utility solar installation delivering bulk zero-carbon daytime electricity into TANTRANSCO grid.",
         coordinates: [78.3888, 9.3512]
       },
       {
         id: "ennore-ocean",
-        name: "Ennore Tidal & Wave Energy Station",
-        location: "Ennore Coast, Bay of Bengal, Chennai",
+        name: "Ennore Tidal & Coastal Wave Energy Station",
+        location: "Bay of Bengal, Ennore Port, Chennai",
         type: "ocean",
-        technology: "Oscillating Water Column Wave & Coastal Tidal Turbine",
+        technology: "Oscillating Water Column Coastal Wave Converters",
         capacityMw: 35,
-        currentOutputKw: 0,
-        status: "SYNCHRONIZED",
+        status: "SYNCHRONIZED - TIDAL CYCLE",
         icon: "Droplets",
-        description: "Coastal hydro and tidal flow generation harnessing Bay of Bengal littoral currents along North Chennai harbour.",
+        description: "Coastal hydro and tidal energy project harnessing Bay of Bengal littoral tidal shifts.",
         coordinates: [80.3235, 13.2081]
+      },
+      {
+        id: "kundah-hydro",
+        name: "Kundah & Pykara Hydroelectric Complex",
+        location: "Nilgiris Biosphere Reserve, Tamil Nadu",
+        type: "ocean",
+        technology: "High-Head Hydro Pelton Turbines & Pumped Storage",
+        capacityMw: 585,
+        status: "PEAK DISPATCH READY",
+        icon: "Droplets",
+        description: "Multi-stage hydroelectric generation utilizing Western Ghats rainfall catchments for grid balancing.",
+        coordinates: [76.6833, 11.3167]
       }
     ]
   },
-  mumbai: {
-    regionName: "Maharashtra Western Grid",
+
+  "kerala": {
+    stateName: "Kerala",
+    regionName: "Kerala State Electricity Board (KSEB) Clean Grid",
+    baseDemandKw: 240,
+    cities: [
+      { name: "Kochi", lat: 9.9312, lon: 76.2673, demandMultiplier: 1.3, isCapital: false },
+      { name: "Thiruvananthapuram", lat: 8.5241, lon: 76.9366, demandMultiplier: 1.2, isCapital: true },
+      { name: "Kozhikode", lat: 11.2588, lon: 75.7804, demandMultiplier: 1.1 },
+      { name: "Idukki", lat: 9.8494, lon: 76.9804, demandMultiplier: 0.8 },
+      { name: "Thrissur", lat: 10.5276, lon: 76.2144, demandMultiplier: 1.0 }
+    ],
+    plants: [
+      {
+        id: "idukki-hydro",
+        name: "Idukki Arch Dam & Hydroelectric Power Station",
+        location: "Periyar River, Moolamattom, Idukki",
+        type: "ocean",
+        technology: "Double-Curvature Parabolic Arch Dam with Pelton Turbines",
+        capacityMw: 780,
+        status: "ACTIVE - PEAK DISPATCH",
+        icon: "Droplets",
+        description: "Kerala's largest hydroelectric powerhouse generating clean electricity from the Western Ghats Periyar gorge.",
+        coordinates: [76.9744, 9.8425]
+      },
+      {
+        id: "cial-solar",
+        name: "Cochin International Airport (CIAL) Solar Park",
+        location: "Nedumbassery, Kochi, Kerala",
+        type: "solar",
+        technology: "Bifacial Smart Photovoltaic Power Plant",
+        capacityMw: 40,
+        status: "100% CLEAN GENERATION",
+        icon: "Sun",
+        description: "World's first fully solar-powered international airport with net grid feed-in capability.",
+        coordinates: [76.4020, 10.1518]
+      },
+      {
+        id: "banasura-solar",
+        name: "Banasura Sagar Floating Solar Installation",
+        location: "Banasura Sagar Reservoir, Wayanad, Kerala",
+        type: "solar",
+        technology: "Inland Floating PV with Water Evaporation Mitigation",
+        capacityMw: 15,
+        status: "GENERATING",
+        icon: "Sun",
+        description: "Pioneering floating solar panels on reservoir water surface maintaining cooler PV cell efficiency.",
+        coordinates: [75.9575, 11.6692]
+      },
+      {
+        id: "ramakkalmedu-wind",
+        name: "Ramakkalmedu & Kanjikode Wind Parks",
+        location: "Western Ghats Border, Idukki & Palakkad Gap",
+        type: "wind",
+        technology: "High-Altitude Gust Wind Turbines",
+        capacityMw: 60,
+        status: "OPERATIONAL",
+        icon: "Wind",
+        description: "Captures year-round crosswinds funneled through the mountain gaps between Kerala and Tamil Nadu.",
+        coordinates: [77.1833, 9.8000]
+      },
+      {
+        id: "vizhinjam-ocean",
+        name: "Vizhinjam Wave Energy & Tidal Testbed",
+        location: "Arabian Sea Coast, Vizhinjam, Thiruvananthapuram",
+        type: "ocean",
+        technology: "Oscillating Water Column Submerged Wave Turbine",
+        capacityMw: 10,
+        status: "SYNCHRONIZED",
+        icon: "Droplets",
+        description: "Harnesses high-energy Arabian Sea coastal swell and tidal movements.",
+        coordinates: [76.9917, 8.3750]
+      },
+      {
+        id: "kudankulam-kerala-link",
+        name: "Kudankulam Inter-State Nuclear Feed Link",
+        location: "Southern Regional Power Grid Interconnect",
+        type: "nuclear",
+        technology: "Clean Baseload Nuclear Allocation Line (400kV)",
+        capacityMw: 266,
+        status: "ACTIVE - BASELOAD 99%",
+        icon: "Atom",
+        description: "Statutory central generating station share allocated directly to the KSEB grid for non-fluctuating night-time load.",
+        coordinates: [77.7128, 8.1697]
+      }
+    ]
+  },
+
+  "karnataka": {
+    stateName: "Karnataka",
+    regionName: "Karnataka Power Transmission Corp (KPTCL) Grid",
+    baseDemandKw: 290,
+    cities: [
+      { name: "Bangalore", lat: 12.9716, lon: 77.5946, demandMultiplier: 1.4, isCapital: true },
+      { name: "Mysore", lat: 12.2958, lon: 76.6394, demandMultiplier: 1.05 },
+      { name: "Mangalore", lat: 12.9141, lon: 74.8560, demandMultiplier: 1.1 },
+      { name: "Hubli-Dharwad", lat: 15.3647, lon: 75.1240, demandMultiplier: 1.0 },
+      { name: "Belagavi", lat: 15.8497, lon: 74.4977, demandMultiplier: 0.95 },
+      { name: "Tumkur", lat: 13.3379, lon: 77.1173, demandMultiplier: 0.9 }
+    ],
+    plants: [
+      {
+        id: "pavagada-solar",
+        name: "Pavagada Solar Park (Shakti Sthala)",
+        location: "Tumkur District, Karnataka (~180 km North of Bangalore)",
+        type: "solar",
+        technology: "13,000-Acre Ultra Mega Photovoltaic Array",
+        capacityMw: 2050,
+        status: "PEAK HARVESTING",
+        icon: "Sun",
+        description: "World-class 2-Gigawatt solar sanctuary powering Bangalore's technology corridors and industrial hubs.",
+        coordinates: [77.2792, 14.1011]
+      },
+      {
+        id: "kaiga-atomic",
+        name: "Kaiga Generating Station (KGS)",
+        location: "Kali River, Karwar, Uttara Kannada",
+        type: "nuclear",
+        technology: "4x 220MW Pressurized Heavy Water Reactors (PHWR)",
+        capacityMw: 880,
+        status: "ACTIVE - BASELOAD 99%",
+        icon: "Atom",
+        description: "World-record holder for continuous uninterrupted nuclear operation (962 days), delivering reliable zero-carbon base load.",
+        coordinates: [74.4389, 14.8653]
+      },
+      {
+        id: "chitradurga-wind",
+        name: "Chitradurga, Gadag & Bellary Wind Corridor",
+        location: "Central Deccan Plateau Ridges, Karnataka",
+        type: "wind",
+        technology: "High-Capacity Direct Drive Wind Turbines",
+        capacityMw: 650,
+        status: "OPERATIONAL",
+        icon: "Wind",
+        description: "Elevated plateau wind generation capturing dry seasonal gusts across central Karnataka.",
+        coordinates: [76.4000, 14.2333]
+      },
+      {
+        id: "sharavathi-hydro",
+        name: "Sharavathi Hydroelectric Project",
+        location: "Jog Falls, Shimoga District, Karnataka",
+        type: "ocean",
+        technology: "High-Head Impulse Pelton Turbines",
+        capacityMw: 1035,
+        status: "SYNCHRONIZED",
+        icon: "Droplets",
+        description: "Karnataka's hydro generation workhorse providing rapid load-following response during peak industrial hours.",
+        coordinates: [74.7917, 14.2333]
+      }
+    ]
+  },
+
+  "maharashtra": {
+    stateName: "Maharashtra",
+    regionName: "Maharashtra State Electricity Transmission (MSETCL) Grid",
+    baseDemandKw: 320,
+    cities: [
+      { name: "Mumbai", lat: 19.0760, lon: 72.8777, demandMultiplier: 1.45, isCapital: true },
+      { name: "Pune", lat: 18.5204, lon: 73.8567, demandMultiplier: 1.25 },
+      { name: "Nagpur", lat: 21.1458, lon: 79.0882, demandMultiplier: 1.05 },
+      { name: "Nashik", lat: 19.9975, lon: 73.7898, demandMultiplier: 1.0 },
+      { name: "Chhatrapati Sambhajinagar", lat: 19.8762, lon: 75.3433, demandMultiplier: 0.95 }
+    ],
     plants: [
       {
         id: "tarapur-taps",
         name: "Tarapur Atomic Power Station (TAPS)",
-        location: "Palghar, Maharashtra (~95 km North)",
+        location: "Palghar District, Maharashtra (~95 km North of Mumbai)",
         type: "nuclear",
         technology: "BWR & PHWR Nuclear Reactors (Units 1-4)",
         capacityMw: 1400,
-        currentOutputKw: 0,
         status: "ACTIVE - BASELOAD 97%",
         icon: "Atom",
         description: "India's first commercial nuclear power station, delivering continuous clean baseload electricity to Mumbai & MMR.",
         coordinates: [72.6567, 19.8292]
       },
       {
+        id: "koyna-hydro",
+        name: "Koyna Hydroelectric Power Complex",
+        location: "Koynanagar, Satara District, Maharashtra",
+        type: "ocean",
+        technology: "Underground Powerhouse & Lake-Tap Pelton Generators",
+        capacityMw: 1960,
+        status: "PEAK LOAD BALANCER",
+        icon: "Droplets",
+        description: "Largest completed hydroelectric plant in India, acting as Maharashtra's rapid black-start and peak demand anchor.",
+        coordinates: [73.7500, 17.4000]
+      },
+      {
         id: "brahmanvel-wind",
         name: "Brahmanvel & Dhalgaon Wind Park",
-        location: "Dhule & Sangli, Maharashtra",
+        location: "Dhule & Sangli Districts, Maharashtra",
         type: "wind",
-        technology: "High-Elevation Plateau Wind Turbine Clusters",
+        technology: "High-Elevation Ridgeline Wind Turbines",
         capacityMw: 528,
-        currentOutputKw: 0,
         status: "OPERATIONAL",
         icon: "Wind",
-        description: "Western Ghats ridgeline wind farms feeding high seasonal monsoon generation into the MSETCL transmission lines.",
+        description: "Western Ghats ridgeline wind farms feeding high seasonal monsoon generation into the transmission ring.",
         coordinates: [74.2817, 21.3972]
       },
       {
         id: "sakri-solar",
         name: "Mahagenco Sakri Solar Park",
-        location: "Shivajinagar, Sakri, Maharashtra",
+        location: "Shivajinagar, Sakri, Dhule, Maharashtra",
         type: "solar",
         technology: "Crystalline Silicon Grid-Tied PV Array",
         capacityMw: 125,
-        currentOutputKw: 0,
         status: "GENERATING",
         icon: "Sun",
-        description: "State-of-the-art utility solar field offsetting fossil generation during daytime commercial peaks in Greater Mumbai.",
+        description: "Utility solar field offsetting fossil generation during daytime commercial peaks in Mumbai and Pune.",
         coordinates: [74.3167, 20.9833]
-      },
-      {
-        id: "bhira-khopoli-hydro",
-        name: "Tata Power Bhira & Khopoli Hydroelectric",
-        location: "Western Ghats, Raigad, Maharashtra",
-        type: "ocean",
-        technology: "Pumped Storage & High-Head Hydro Turbines",
-        capacityMw: 300,
-        currentOutputKw: 0,
-        status: "SYNCHRONIZED",
-        icon: "Droplets",
-        description: "Pioneering hydro station converting Western Ghats monsoon water catchments into instant dispatchable power.",
-        coordinates: [73.3980, 18.4550]
       }
     ]
   },
-  delhi: {
-    regionName: "Northern Regional Power Grid (NRPC)",
+
+  "delhi": {
+    stateName: "Delhi NCR",
+    regionName: "Delhi Transco Limited (DTL) / Northern Regional Grid",
+    baseDemandKw: 340,
+    cities: [
+      { name: "Delhi NCT", lat: 28.7041, lon: 77.1025, demandMultiplier: 1.4, isCapital: true },
+      { name: "Gurugram", lat: 28.4595, lon: 77.0266, demandMultiplier: 1.25 },
+      { name: "Noida", lat: 28.5355, lon: 77.3910, demandMultiplier: 1.2 },
+      { name: "Faridabad", lat: 28.4089, lon: 77.3178, demandMultiplier: 1.05 }
+    ],
     plants: [
       {
         id: "narora-naps",
         name: "Narora Atomic Power Station (NAPS)",
-        location: "Bulandshahr, Uttar Pradesh (~140 km East)",
+        location: "Bulandshahr, Uttar Pradesh (~140 km East of Delhi)",
         type: "nuclear",
         technology: "Twin Pressurized Heavy Water Reactors",
         capacityMw: 440,
-        currentOutputKw: 0,
         status: "ACTIVE - ONLINE",
         icon: "Atom",
-        description: "Primary nuclear station supplying non-fluctuating base electricity into the Delhi Transco national capital territory ring.",
+        description: "Primary nuclear station supplying steady base electricity into the Delhi Transco national capital territory ring.",
         coordinates: [78.4147, 28.1583]
       },
       {
         id: "bhadla-solar",
         name: "Bhadla Solar Park (Phase I-IV)",
-        location: "Phalodi, Jodhpur, Rajasthan",
+        location: "Phalodi, Jodhpur, Rajasthan (Transferred via 765kV Green Corridor)",
         type: "solar",
-        technology: "Ultra-Mega Photovoltaic Solar Cluster",
+        technology: "Ultra-Mega Contiguous Solar Complex (14,000 Acres)",
         capacityMw: 2245,
-        currentOutputKw: 0,
         status: "MAX SOLAR HARVEST",
         icon: "Sun",
-        description: "One of the world's largest solar installations spanning 14,000 acres in Thar desert, channeled to NCR via 765kV Green Corridor.",
+        description: "One of the world's largest solar installations in the Thar desert, transmitting bulk green power to Delhi NCR.",
         coordinates: [71.9167, 27.5333]
       },
       {
@@ -165,7 +358,6 @@ const REGIONAL_POWER_PLANTS = {
         type: "wind",
         technology: "High-Capacity Desert Wind Turbines",
         capacityMw: 1064,
-        currentOutputKw: 0,
         status: "OPERATIONAL",
         icon: "Wind",
         description: "India's second largest wind farm harnessing high desert thermals to feed the Northern National Grid.",
@@ -178,73 +370,150 @@ const REGIONAL_POWER_PLANTS = {
         type: "ocean",
         technology: "High-Head Variable Speed Pumped Hydro Storage",
         capacityMw: 1400,
-        currentOutputKw: 0,
         status: "PEAK DISPATCH READY",
         icon: "Droplets",
-        description: "Tallest dam in India providing critical rapid grid frequency stabilization and peak power buffering for Delhi.",
+        description: "Tallest dam in India providing rapid grid frequency stabilization and peak power buffering for the Capital.",
         coordinates: [78.4800, 30.3780]
       }
     ]
   },
-  bangalore: {
-    regionName: "Karnataka Southern Clean Corridor",
+
+  "gujarat": {
+    stateName: "Gujarat",
+    regionName: "Gujarat Energy Transmission Corp (GETCO) Clean Grid",
+    baseDemandKw: 300,
+    cities: [
+      { name: "Ahmedabad", lat: 23.0225, lon: 72.5714, demandMultiplier: 1.35, isCapital: false },
+      { name: "Surat", lat: 21.1702, lon: 72.8311, demandMultiplier: 1.25 },
+      { name: "Vadodara", lat: 22.3072, lon: 73.1812, demandMultiplier: 1.1 },
+      { name: "Rajkot", lat: 22.3039, lon: 70.8022, demandMultiplier: 1.05 },
+      { name: "Kutch", lat: 23.7337, lon: 69.8597, demandMultiplier: 0.9 }
+    ],
     plants: [
       {
-        id: "pavagada-solar",
-        name: "Pavagada Solar Park (Shakti Sthala)",
-        location: "Tumkur District, Karnataka (~180 km North)",
-        type: "solar",
-        technology: "Mega Ultra High-Density Bifacial PV Arrays",
-        capacityMw: 2050,
-        currentOutputKw: 0,
-        status: "PEAK HARVESTING",
-        icon: "Sun",
-        description: "World-class 13,000-acre clean energy sanctuary powering Bangalore's Silicon Valley tech campuses.",
-        coordinates: [77.2792, 14.1011]
-      },
-      {
-        id: "kaiga-atomic",
-        name: "Kaiga Generating Station",
-        location: "Kali River, Karwar, Karnataka",
+        id: "kakrapar-kaps",
+        name: "Kakrapar Atomic Power Station (KAPS)",
+        location: "Vyara, Surat District, Gujarat",
         type: "nuclear",
-        technology: "Pressurized Heavy Water Reactor (Units 1-4)",
-        capacityMw: 880,
-        currentOutputKw: 0,
+        technology: "Indigenous 700MW Pressurized Heavy Water Reactors (Units 1-4)",
+        capacityMw: 1840,
         status: "ACTIVE - BASELOAD 99%",
         icon: "Atom",
-        description: "Record-holding continuous operation nuclear station powering Karnataka southern industrial zones.",
-        coordinates: [74.4389, 14.8653]
+        description: "India's flagship indigenous 700MWe nuclear reactor facility providing steady clean baseload power.",
+        coordinates: [73.3500, 21.2333]
       },
       {
-        id: "chitradurga-wind",
-        name: "Chitradurga & Gadag Wind Ridge",
-        location: "Deccan Plateau Ridges, Karnataka",
+        id: "charanka-solar",
+        name: "Charanka Solar Park (Patan)",
+        location: "Charanka, Santalpur, Patan District, Gujarat",
+        type: "solar",
+        technology: "Multi-Developer Photovoltaic Megapark",
+        capacityMw: 790,
+        status: "MAX HARVEST",
+        icon: "Sun",
+        description: "India's pioneer solar park built on arid land in Patan, generating clean power across western Gujarat.",
+        coordinates: [71.2000, 23.9000]
+      },
+      {
+        id: "kutch-wind",
+        name: "Kutch & Saurashtra Coastal Wind Farms",
+        location: "Gulf of Kutch & Arabian Sea Coast, Gujarat",
         type: "wind",
-        technology: "Onshore High-Torque Wind Turbines",
-        capacityMw: 450,
-        currentOutputKw: 0,
-        status: "OPERATIONAL",
+        technology: "Coastal High-Yield Marine Wind Turbines",
+        capacityMw: 1200,
+        status: "HIGH VELOCITY",
         icon: "Wind",
-        description: "Plateau wind generation capturing dry seasonal gusts across central Karnataka.",
-        coordinates: [76.4000, 14.2333]
+        description: "Harnesses fierce Arabian Sea coastal winds along the Kutch coastline.",
+        coordinates: [69.5000, 23.2000]
       },
       {
-        id: "sharavathi-hydro",
-        name: "Sharavathi Hydroelectric Project",
-        location: "Jog Falls, Shimoga, Karnataka",
+        id: "sardar-sarovar-hydro",
+        name: "Sardar Sarovar Dam Hydro Power Complex",
+        location: "Narmada River, Kevadia, Gujarat",
         type: "ocean",
-        technology: "High-Head Impulse Pelton Turbines",
-        capacityMw: 1035,
-        currentOutputKw: 0,
+        technology: "Riverbed & Canal Head Hydro Turbines",
+        capacityMw: 1450,
         status: "SYNCHRONIZED",
         icon: "Droplets",
-        description: "Karnataka's primary hydro generation workhorse providing rapid load-following response.",
-        coordinates: [74.7917, 14.2333]
+        description: "Major multi-purpose river hydro station supplying flexible hydro balancing power to the grid.",
+        coordinates: [73.7483, 21.8278]
       }
     ]
   },
-  "new york": {
+
+  "andhra pradesh": {
+    stateName: "Andhra Pradesh & Telangana",
+    regionName: "Southern Regional Power Committee (SRPC) Grid",
+    baseDemandKw: 280,
+    cities: [
+      { name: "Hyderabad", lat: 17.3850, lon: 78.4867, demandMultiplier: 1.35, isCapital: true },
+      { name: "Visakhapatnam", lat: 17.6868, lon: 83.2185, demandMultiplier: 1.2 },
+      { name: "Vijayawada", lat: 16.5062, lon: 80.6480, demandMultiplier: 1.1 },
+      { name: "Kurnool", lat: 15.8281, lon: 78.0373, demandMultiplier: 1.0 },
+      { name: "Warangal", lat: 17.9689, lon: 79.5941, demandMultiplier: 0.95 }
+    ],
+    plants: [
+      {
+        id: "kurnool-solar",
+        name: "Kurnool Ultra Mega Solar Park",
+        location: "Gani & Sakunala, Kurnool, Andhra Pradesh",
+        type: "solar",
+        technology: "Single-Axis Tracking Utility PV (5,900 Acres)",
+        capacityMw: 1000,
+        status: "GENERATING",
+        icon: "Sun",
+        description: "1-Gigawatt solar park operating under high ray density in the Rayalaseema region.",
+        coordinates: [78.2833, 15.6833]
+      },
+      {
+        id: "ramagundam-solar",
+        name: "Ramagundam Floating Solar Plant",
+        location: "NTPC Reservoir, Peddapalli, Telangana",
+        type: "solar",
+        technology: "Reservoir Floating Photovoltaic Array",
+        capacityMw: 100,
+        status: "ONLINE",
+        icon: "Sun",
+        description: "One of India's largest floating solar projects on reservoir surface conserving water and optimizing cell output.",
+        coordinates: [79.5333, 18.7667]
+      },
+      {
+        id: "srisailam-hydro",
+        name: "Srisailam Hydroelectric Power Station",
+        location: "Krishna River Gorge, Andhra Pradesh / Telangana",
+        type: "ocean",
+        technology: "Deep Gorge High-Head Reversible Pumped Hydro Turbines",
+        capacityMw: 1670,
+        status: "PEAK DISPATCH",
+        icon: "Droplets",
+        description: "Major pumped-storage hydro installation providing instantaneous power injection during grid frequency dips.",
+        coordinates: [78.8972, 16.0867]
+      },
+      {
+        id: "kaiga-kakrapar-ap-link",
+        name: "Central Grid Baseload Nuclear Allocation",
+        location: "Southern Transmission Interties (400kV)",
+        type: "nuclear",
+        technology: "Nuclear Baseload Share from Kaiga & MAPS",
+        capacityMw: 450,
+        status: "ACTIVE - BASELOAD",
+        icon: "Atom",
+        description: "Uninterrupted clean baseload nuclear energy allocated to Hyderabad and Visakhapatnam grids.",
+        coordinates: [74.4389, 14.8653]
+      }
+    ]
+  },
+
+  "international-us-ny": {
+    stateName: "New York State, USA",
     regionName: "New York Independent System Operator (NYISO)",
+    baseDemandKw: 330,
+    cities: [
+      { name: "New York City", lat: 40.7128, lon: -74.0060, demandMultiplier: 1.5, isCapital: false },
+      { name: "Buffalo", lat: 42.8864, lon: -78.8784, demandMultiplier: 1.05 },
+      { name: "Albany", lat: 42.6526, lon: -73.7562, demandMultiplier: 1.0, isCapital: true },
+      { name: "Rochester", lat: 43.1566, lon: -77.6088, demandMultiplier: 1.0 }
+    ],
     plants: [
       {
         id: "nine-mile-nuclear",
@@ -253,23 +522,33 @@ const REGIONAL_POWER_PLANTS = {
         type: "nuclear",
         technology: "Boiling Water Nuclear Reactors (BWR-4 & BWR-5)",
         capacityMw: 1850,
-        currentOutputKw: 0,
         status: "ACTIVE - ONLINE",
         icon: "Atom",
         description: "Primary carbon-free baseload powerhouse for New York State electrical grid.",
         coordinates: [-76.4089, 43.5214]
       },
       {
+        id: "niagara-hydro",
+        name: "Robert Moses Niagara Hydroelectric Power Plant",
+        location: "Niagara River, Lewiston, NY",
+        type: "ocean",
+        technology: "Francis Hydraulic Turbines & Pumped Storage",
+        capacityMw: 2525,
+        status: "BASE GENERATION",
+        icon: "Droplets",
+        description: "Massive hydroelectric plant channeling Niagara River gorge flow to NYC grid.",
+        coordinates: [-79.0431, 43.1408]
+      },
+      {
         id: "south-fork-wind",
-        name: "South Fork & Maple Ridge Offshore/Onshore Wind",
-        location: "Atlantic Coast, Long Island / Tug Hill, NY",
+        name: "South Fork Offshore Wind Array",
+        location: "Atlantic Ocean (~56 km off Montauk Point, NY)",
         type: "wind",
         technology: "Offshore Marine Wind Turbines",
-        capacityMw: 450,
-        currentOutputKw: 0,
+        capacityMw: 130,
         status: "OPERATIONAL",
         icon: "Wind",
-        description: "New York's flagship utility offshore wind array capturing Atlantic marine gusts.",
+        description: "New York's flagship commercial utility offshore wind farm capturing Atlantic ocean winds.",
         coordinates: [-71.8500, 41.0500]
       },
       {
@@ -279,41 +558,34 @@ const REGIONAL_POWER_PLANTS = {
         type: "solar",
         technology: "Utility Photovoltaic Solar Array",
         capacityMw: 150,
-        currentOutputKw: 0,
         status: "GENERATING",
         icon: "Sun",
-        description: "Largest utility solar facility in Eastern USA powering Long Island & NYC suburbs.",
+        description: "Utility solar facility in Eastern USA powering Long Island and NYC suburbs.",
         coordinates: [-72.8750, 40.8650]
-      },
-      {
-        id: "niagara-hydro",
-        name: "Robert Moses Niagara Hydroelectric Power Plant",
-        location: "Niagara River, Lewiston, NY",
-        type: "ocean",
-        technology: "Francis Hydraulic Turbines & Pumped Storage",
-        capacityMw: 2525,
-        currentOutputKw: 0,
-        status: "BASE GENERATION",
-        icon: "Droplets",
-        description: "Massive hydroelectric plant channeling Niagara River gorge flow to NYC grid.",
-        coordinates: [-79.0431, 43.1408]
       }
     ]
   },
-  london: {
-    regionName: "UK National Grid (NESO)",
+
+  "international-uk": {
+    stateName: "Greater London & England, UK",
+    regionName: "UK National Energy System Operator (NESO)",
+    baseDemandKw: 310,
+    cities: [
+      { name: "London", lat: 51.5074, lon: -0.1278, demandMultiplier: 1.45, isCapital: true },
+      { name: "Manchester", lat: 53.4808, lon: -2.2426, demandMultiplier: 1.15 },
+      { name: "Birmingham", lat: 52.4862, lon: -1.8904, demandMultiplier: 1.2 }
+    ],
     plants: [
       {
         id: "sizewell-nuclear",
         name: "Sizewell B Nuclear Power Station",
-        location: "Suffolk Coast, East Anglia (~140 km NE)",
+        location: "Suffolk Coast, East Anglia (~140 km NE of London)",
         type: "nuclear",
         technology: "Pressurized Water Reactor (PWR)",
         capacityMw: 1198,
-        currentOutputKw: 0,
         status: "ACTIVE - BASELOAD",
         icon: "Atom",
-        description: "The UK's sole commercial PWR, generating continuous zero-carbon baseload electricity for Greater London.",
+        description: "The UK's sole commercial PWR, generating continuous zero-carbon baseload electricity.",
         coordinates: [1.6192, 52.2133]
       },
       {
@@ -323,7 +595,6 @@ const REGIONAL_POWER_PLANTS = {
         type: "wind",
         technology: "175x Siemens 3.6MW Marine Wind Turbines",
         capacityMw: 630,
-        currentOutputKw: 0,
         status: "HIGH VELOCITY",
         icon: "Wind",
         description: "World-renowned offshore wind park supplying clean energy directly into the London substation hub.",
@@ -336,7 +607,6 @@ const REGIONAL_POWER_PLANTS = {
         type: "solar",
         technology: "High-Efficiency Solar PV with Utility Battery Storage",
         capacityMw: 350,
-        currentOutputKw: 0,
         status: "GENERATING",
         icon: "Sun",
         description: "UK's largest solar farm feeding renewable daytime power into London transmission ring.",
@@ -349,7 +619,6 @@ const REGIONAL_POWER_PLANTS = {
         type: "ocean",
         technology: "Bi-directional Marine Current Turbines",
         capacityMw: 25,
-        currentOutputKw: 0,
         status: "SYNCHRONIZED",
         icon: "Droplets",
         description: "Estuary tidal current generators leveraging North Sea tidal oscillations.",
@@ -357,122 +626,16 @@ const REGIONAL_POWER_PLANTS = {
       }
     ]
   },
-  tokyo: {
-    regionName: "TEPCO Power Grid Network",
-    plants: [
-      {
-        id: "kashiwazaki-nuclear",
-        name: "Kashiwazaki-Kariwa Nuclear Station",
-        location: "Niigata Prefecture, Sea of Japan Coast",
-        type: "nuclear",
-        technology: "Advanced Boiling Water Reactors (ABWR)",
-        capacityMw: 8212,
-        currentOutputKw: 0,
-        status: "ACTIVE - SYNCHRONIZED",
-        icon: "Atom",
-        description: "The largest nuclear generating station in the world by net capacity, connected to Tokyo via 500kV ultra lines.",
-        coordinates: [138.5989, 37.4278]
-      },
-      {
-        id: "choshi-wind",
-        name: "Choshi Offshore Wind Farm",
-        location: "Pacific Coast, Chiba Prefecture",
-        type: "wind",
-        technology: "Bottom-Fixed Marine Wind Turbines",
-        capacityMw: 200,
-        currentOutputKw: 0,
-        status: "OPERATIONAL",
-        icon: "Wind",
-        description: "Pacific offshore wind installation capturing oceanic jet currents.",
-        coordinates: [140.8500, 35.7333]
-      },
-      {
-        id: "komekurayama-solar",
-        name: "Komekurayama Mega Solar Power Plant",
-        location: "Kofu Basin, Yamanashi Prefecture",
-        type: "solar",
-        technology: "Crystalline High-Yield Solar Arrays",
-        capacityMw: 100,
-        currentOutputKw: 0,
-        status: "GENERATING",
-        icon: "Sun",
-        description: "High-insolation solar complex in central Japan delivering daytime green power to Tokyo.",
-        coordinates: [138.5667, 35.6000]
-      },
-      {
-        id: "kairyu-ocean",
-        name: "Izu Kuroshio Ocean Current Turbine (Kairyu)",
-        location: "Izu Archipelago, Pacific Ocean",
-        type: "ocean",
-        technology: "Deep Ocean Submerged Current Rotor Generator",
-        capacityMw: 40,
-        currentOutputKw: 0,
-        status: "SYNCHRONIZED",
-        icon: "Droplets",
-        description: "Deep sea generation utilizing the perennial high-speed Kuroshio ocean current.",
-        coordinates: [139.7500, 34.5000]
-      }
-    ]
-  },
-  paris: {
-    regionName: "RTE France Réseau de Transport d'Électricité",
-    plants: [
-      {
-        id: "nogent-nuclear",
-        name: "Nogent Nuclear Power Plant",
-        location: "Seine River, Aube, France (~110 km SE)",
-        type: "nuclear",
-        technology: "Twin 1300MW Pressurized Water Reactors (PWR)",
-        capacityMw: 2600,
-        currentOutputKw: 0,
-        status: "ACTIVE - BASELOAD 99%",
-        icon: "Atom",
-        description: "Primary clean nuclear baseload facility supplying over a third of Île-de-France (Greater Paris) electricity.",
-        coordinates: [3.5186, 48.5153]
-      },
-      {
-        id: "saint-nazaire-wind",
-        name: "Saint-Nazaire & Catalan Offshore/Onshore Wind",
-        location: "Loire-Atlantique & Occitanie, France",
-        type: "wind",
-        technology: "Haliade 150-6MW Offshore Marine Turbines",
-        capacityMw: 480,
-        currentOutputKw: 0,
-        status: "OPERATIONAL",
-        icon: "Wind",
-        description: "France's flagship commercial offshore wind farm capturing Atlantic marine gusts.",
-        coordinates: [-2.4333, 47.1667]
-      },
-      {
-        id: "cestas-solar",
-        name: "Cestas Solar Park",
-        location: "Gironde, South-West France",
-        type: "solar",
-        technology: "East-West High-Density Photovoltaic Array",
-        capacityMw: 300,
-        currentOutputKw: 0,
-        status: "GENERATING",
-        icon: "Sun",
-        description: "Europe's premier solar installation generating over 350 GWh annually for the French national grid.",
-        coordinates: [-0.6833, 44.7500]
-      },
-      {
-        id: "rance-tidal",
-        name: "La Rance Tidal Power Station",
-        location: "Rance River Estuary, Brittany, France",
-        type: "ocean",
-        technology: "24x Bulb-Type Bi-directional Tidal Turbines",
-        capacityMw: 240,
-        currentOutputKw: 0,
-        status: "SYNCHRONIZED - TIDE CYCLE",
-        icon: "Droplets",
-        description: "Pioneering world-first commercial tidal power barrage operating continuously since 1966.",
-        coordinates: [-2.0233, 48.6186]
-      }
-    ]
-  },
-  dubai: {
-    regionName: "DEWA Smart Power Grid / UAE Interconnection",
+
+  "international-uae": {
+    stateName: "Dubai & Emirates, UAE",
+    regionName: "DEWA Smart Power Grid / UAE National Interconnection",
+    baseDemandKw: 350,
+    cities: [
+      { name: "Dubai", lat: 25.2048, lon: 55.2708, demandMultiplier: 1.45, isCapital: false },
+      { name: "Abu Dhabi", lat: 24.4539, lon: 54.3773, demandMultiplier: 1.35, isCapital: true },
+      { name: "Sharjah", lat: 25.3463, lon: 55.4209, demandMultiplier: 1.1 }
+    ],
     plants: [
       {
         id: "mbr-solar-park",
@@ -481,7 +644,6 @@ const REGIONAL_POWER_PLANTS = {
         type: "solar",
         technology: "PV & Concentrated Solar Power (CSP) Tower (262m)",
         capacityMw: 2427,
-        currentOutputKw: 0,
         status: "HYPER-HARVESTING",
         icon: "Sun",
         description: "The largest single-site solar park in the world, targeting 5,000 MW capacity with molten salt thermal storage.",
@@ -494,7 +656,6 @@ const REGIONAL_POWER_PLANTS = {
         type: "nuclear",
         technology: "4x APR-1400 Advanced Power Reactors",
         capacityMw: 5600,
-        currentOutputKw: 0,
         status: "ACTIVE - FULL BASELOAD",
         icon: "Atom",
         description: "The Arab world's first commercial nuclear station, producing 25% of the UAE's entire electricity with zero emissions.",
@@ -507,7 +668,6 @@ const REGIONAL_POWER_PLANTS = {
         type: "wind",
         technology: "Desert & Island Utility Wind Turbines",
         capacityMw: 103,
-        currentOutputKw: 0,
         status: "OPERATIONAL",
         icon: "Wind",
         description: "Advanced low-wind-speed turbine network powering coastal and island microgrids.",
@@ -520,21 +680,23 @@ const REGIONAL_POWER_PLANTS = {
         type: "ocean",
         technology: "Mountain Reservoir Pumped Storage Hydro",
         capacityMw: 250,
-        currentOutputKw: 0,
         status: "GRID BUFFER READY",
         icon: "Droplets",
-        description: "First-of-its-kind mountain pumped storage facility in the GCC, utilizing solar power to pump water for night-time dispatch.",
+        description: "First mountain pumped storage facility in the GCC, utilizing solar power to pump water for peak evening dispatch.",
         coordinates: [56.1333, 24.8167]
       }
     ]
   }
 };
 
-// Fallback dynamic generator for any GPS coordinate / city
+// Fallback dynamic generator for any arbitrary GPS coordinate / city
 const generateDynamicPowerPlants = (cityName, lat, lon) => {
   const normCity = cityName || "Regional Node";
   return {
-    regionName: `${normCity} Clean Power Grid`,
+    stateName: `${normCity} State / Region`,
+    regionName: `${normCity} Synchronized Clean Power Grid`,
+    baseDemandKw: 280,
+    cities: [{ name: normCity, lat, lon, demandMultiplier: 1.0 }],
     plants: [
       {
         id: `local-nuclear-${lat.toFixed(1)}`,
@@ -543,7 +705,6 @@ const generateDynamicPowerPlants = (cityName, lat, lon) => {
         type: "nuclear",
         technology: "Advanced Zero-Emission Pressurized Baseload Reactor",
         capacityMw: 1200,
-        currentOutputKw: 0,
         status: "ACTIVE - BASELOAD 98%",
         icon: "Atom",
         description: `Delivers steady, uninterruptible baseload power to ${normCity} and surrounding regional substations.`,
@@ -556,7 +717,6 @@ const generateDynamicPowerPlants = (cityName, lat, lon) => {
         type: "solar",
         technology: "Bifacial Monocrystalline Smart-Tracking PV",
         capacityMw: 500,
-        currentOutputKw: 0,
         status: "GENERATING",
         icon: "Sun",
         description: `Utility solar farm harvesting direct irradiance across ${normCity} area with automated sun-tracking arrays.`,
@@ -569,7 +729,6 @@ const generateDynamicPowerPlants = (cityName, lat, lon) => {
         type: "wind",
         technology: "High-Altitude Gearless Direct-Drive Turbines",
         capacityMw: 350,
-        currentOutputKw: 0,
         status: "OPERATIONAL",
         icon: "Wind",
         description: `Captures atmospheric boundary-layer winds, feeding variable renewable energy into local transmission lines.`,
@@ -582,7 +741,6 @@ const generateDynamicPowerPlants = (cityName, lat, lon) => {
         type: "ocean",
         technology: "Subsea Kinetic Tidal / Hydro Turbines & Storage",
         capacityMw: 120,
-        currentOutputKw: 0,
         status: "SYNCHRONIZED",
         icon: "Droplets",
         description: `Harnesses aquatic hydrodynamic currents and pumped storage to balance peak energy demand in ${normCity}.`,
@@ -618,7 +776,7 @@ export const fetchCurrentWeather = async (lat, lon, cityName = '') => {
     const solarOutputKw = (irradiance * 0.15 * 100) / 1000 * solarFactor;
 
     // 2. Wind
-    const airDensity = pressure / (287 * (temperature + 273.15)); // ideal gas law approx
+    const airDensity = pressure / (287 * (temperature + 273.15));
     const windOutputKw = windSpeed > 10 ? Math.min(WIND_CAPACITY, (Math.pow(windSpeed / 3.6, 3) * 0.5 * airDensity * 30 * 0.4) / 1000) : 0;
 
     // 3. Ocean / Tidal
@@ -632,16 +790,79 @@ export const fetchCurrentWeather = async (lat, lon, cityName = '') => {
     const nuclearOutputKw = NUCLEAR_CAPACITY * nuclearVariation;
 
     const totalOutput = solarOutputKw + windOutputKw + oceanOutputKw + nuclearOutputKw;
+
+    // Resolve State / Regional Hierarchy
+    const searchKey = (cityName || '').toLowerCase().trim();
+    let matchedStateData = null;
+    let matchedCityData = null;
+
+    // Match by State Name or City Name
+    for (const [sKey, stateObj] of Object.entries(REGIONAL_STATES_DATA)) {
+      if (searchKey.includes(sKey) || sKey.includes(searchKey) || searchKey.includes(stateObj.stateName.toLowerCase())) {
+        matchedStateData = JSON.parse(JSON.stringify(stateObj));
+        break;
+      }
+      // Check individual cities inside the state
+      for (const c of stateObj.cities) {
+        if (searchKey.includes(c.name.toLowerCase()) || c.name.toLowerCase().includes(searchKey.split(',')[0].trim().toLowerCase())) {
+          matchedStateData = JSON.parse(JSON.stringify(stateObj));
+          matchedCityData = c;
+          break;
+        }
+      }
+      if (matchedStateData) break;
+    }
+
+    if (!matchedStateData) {
+      // Find closest known city/state by coordinates
+      let closestState = null;
+      let minDistance = Infinity;
+      for (const [sKey, stateObj] of Object.entries(REGIONAL_STATES_DATA)) {
+        for (const c of stateObj.cities) {
+          const dLat = parsedLat - c.lat;
+          const dLon = parsedLon - c.lon;
+          const dist = Math.sqrt(dLat * dLat + dLon * dLon);
+          if (dist < minDistance) {
+            minDistance = dist;
+            closestState = stateObj;
+            matchedCityData = c;
+          }
+        }
+      }
+      if (minDistance < 6 && closestState) {
+        matchedStateData = JSON.parse(JSON.stringify(closestState));
+      } else {
+        matchedStateData = generateDynamicPowerPlants(cityName || "Local Node", parsedLat, parsedLon);
+      }
+    }
+
+    // Dynamic Demand Calculation (Power Needed vs Power Producing)
+    const baseDemand = matchedStateData.baseDemandKw || 280;
+    const cityMultiplier = matchedCityData?.demandMultiplier || 1.0;
     
+    // Diurnal load curve: Peak hours 9-12 (morning commercial) and 18-22 (evening domestic lighting & AC)
+    let timeDemandFactor = 1.0;
+    if ((hour >= 9 && hour <= 12) || (hour >= 18 && hour <= 22)) {
+      timeDemandFactor = 1.22;
+    } else if (hour >= 1 && hour <= 5) {
+      timeDemandFactor = 0.76;
+    }
+
+    // Temperature cooling/heating impact
+    const tempImpact = temperature > 30 ? 1 + (temperature - 30) * 0.015 : (temperature < 15 ? 1 + (15 - temperature) * 0.01 : 1.0);
+
+    const neededDemandKw = baseDemand * cityMultiplier * timeDemandFactor * tempImpact;
+    const gridBalanceKw = totalOutput - neededDemandKw;
+    const gridStatus = gridBalanceKw >= 0 ? "SURPLUS" : "DEFICIT";
+    const coveragePercent = Math.min(250, (totalOutput / neededDemandKw) * 100).toFixed(1);
+
+    // Battery Storage (BESS)
+    const batteryCapacityKwh = 500;
+    const batterySocPercent = Math.min(100, Math.max(15, 65 + (gridBalanceKw / 8)));
+    const batteryFlowKw = gridBalanceKw.toFixed(1);
+
     const efficiencyScore = Math.min((totalOutput / 400) * 100, 100).toFixed(1);
     const carbonSavingsKg = (totalOutput * 0.4).toFixed(2); 
-
-    // Battery Storage (BESS) simulation: baseline demand is 280 kW
-    const GRID_BASE_DEMAND = 280;
-    const netGridDifference = totalOutput - GRID_BASE_DEMAND;
-    const batteryCapacityKwh = 500;
-    const batterySocPercent = Math.min(100, Math.max(15, 65 + (netGridDifference / 10)));
-    const batteryFlowKw = netGridDifference.toFixed(1); // >0 charging, <0 discharging
 
     // Generate historic mockup for the chart
     const history = [];
@@ -667,48 +888,8 @@ export const fetchCurrentWeather = async (lat, lon, cityName = '') => {
         });
     }
 
-    // Determine an AI Insight
-    let insight = "Grid load balances optimally.";
-    if (solarOutputKw > 20 && windOutputKw > 40) insight = "Renewable surge! Nuclear base scaling down.";
-    else if (cloudCover > 80 && windSpeed < 10) insight = "Low natural factors. Tidal and Nuclear sustaining grid.";
-    else if (totalOutput > 380) insight = "Hyper-generation. Battery arrays charging at max capacity.";
-
-    // Resolve Regional Power Plants & Supply Infrastructure
-    const searchKey = (cityName || '').toLowerCase();
-    let regionalInfrastructure = null;
-
-    for (const key of Object.keys(REGIONAL_POWER_PLANTS)) {
-      if (searchKey.includes(key) || key.includes(searchKey.split(',')[0].trim().toLowerCase())) {
-        regionalInfrastructure = JSON.parse(JSON.stringify(REGIONAL_POWER_PLANTS[key]));
-        break;
-      }
-    }
-
-    if (!regionalInfrastructure) {
-      // Find closest known city by coordinates (within 400km)
-      let closestCity = null;
-      let minDistance = Infinity;
-      for (const [key, data] of Object.entries(REGIONAL_POWER_PLANTS)) {
-        if (data.plants && data.plants[0] && data.plants[0].coordinates) {
-          const [pLon, pLat] = data.plants[0].coordinates;
-          const dLat = parsedLat - pLat;
-          const dLon = parsedLon - pLon;
-          const dist = Math.sqrt(dLat * dLat + dLon * dLon);
-          if (dist < minDistance) {
-            minDistance = dist;
-            closestCity = key;
-          }
-        }
-      }
-      if (minDistance < 5 && closestCity) {
-        regionalInfrastructure = JSON.parse(JSON.stringify(REGIONAL_POWER_PLANTS[closestCity]));
-      } else {
-        regionalInfrastructure = generateDynamicPowerPlants(cityName || "Local Node", parsedLat, parsedLon);
-      }
-    }
-
-    // Populate current live outputs and share for each plant
-    regionalInfrastructure.plants = regionalInfrastructure.plants.map(plant => {
+    // Live output assignments for power plants
+    matchedStateData.plants = matchedStateData.plants.map(plant => {
       let liveOutput = 0;
       if (plant.type === 'solar') liveOutput = solarOutputKw;
       else if (plant.type === 'wind') liveOutput = windOutputKw;
@@ -721,6 +902,14 @@ export const fetchCurrentWeather = async (lat, lon, cityName = '') => {
         outputSharePercent: totalOutput > 0 ? ((liveOutput / totalOutput) * 100).toFixed(1) : "0"
       };
     });
+
+    // AI Insight
+    let insight = "Grid load balances optimally with positive frequency stability.";
+    if (gridStatus === 'SURPLUS') {
+      insight = `Optimal Generation: Net surplus of ${Math.abs(gridBalanceKw).toFixed(1)} kW exported to BESS storage and inter-state corridors.`;
+    } else {
+      insight = `Peak Demand Strain: Deficit of ${Math.abs(gridBalanceKw).toFixed(1)} kW buffered by rapid hydro dispatch and battery discharge.`;
+    }
 
     return {
       current: {
@@ -735,6 +924,12 @@ export const fetchCurrentWeather = async (lat, lon, cityName = '') => {
         oceanOutputKw: oceanOutputKw.toFixed(2),
         nuclearOutputKw: nuclearOutputKw.toFixed(2),
         totalOutput: totalOutput.toFixed(2),
+        // Demand vs Supply
+        powerNeededKw: neededDemandKw.toFixed(1),
+        powerProducingKw: totalOutput.toFixed(1),
+        gridBalanceKw: gridBalanceKw.toFixed(1),
+        gridStatus,
+        coveragePercent,
         efficiencyScore,
         carbonSavingsKg,
         battery: {
@@ -744,7 +939,10 @@ export const fetchCurrentWeather = async (lat, lon, cityName = '') => {
           capacityKwh: batteryCapacityKwh
         }
       },
-      regionalInfrastructure,
+      regionalInfrastructure: matchedStateData,
+      selectedCity: matchedCityData?.name || cityName || matchedStateData.stateName,
+      stateName: matchedStateData.stateName,
+      availableCities: matchedStateData.cities || [],
       history,
       insight
     };
@@ -772,7 +970,7 @@ export const getPredictionFromService = async (features) => {
   let current_val = predicted_energy;
   
   for (let i = 1; i <= 12; i++) {
-    const variation = -0.05 + Math.random() * 0.1; // tighten variance due to steady baseloads
+    const variation = -0.05 + Math.random() * 0.1;
     current_val = Math.max(0, current_val + (current_val * variation));
     timeline.push({
       hour: `+${i}h`,
