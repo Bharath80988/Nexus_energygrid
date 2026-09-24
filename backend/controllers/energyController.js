@@ -2,12 +2,12 @@ import { fetchCurrentWeather, getPredictionFromService } from '../services/energ
 
 export const getEnergyData = async (req, res, next) => {
   try {
-    const { lat, lon } = req.query;
+    const { lat, lon, city } = req.query;
     if (!lat || !lon) {
       return res.status(400).json({ error: 'Latitude and longitude are required' });
     }
     
-    const data = await fetchCurrentWeather(lat, lon);
+    const data = await fetchCurrentWeather(lat, lon, city);
     res.json(data);
   } catch (error) {
     next(error);

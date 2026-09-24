@@ -5,55 +5,88 @@ const NetworkBackground = () => {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d', { alpha: true });
     
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+
     const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.scale(dpr, dpr);
     };
     
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    const particles = [];
-    const numParticles = 60;
+    const isMobile = width < 768;
+    const numParticles = isMobile ? 24 : 45;
+    const maxDist = 125;
+    const maxDistSq = maxDist * maxDist;
 
+    const particles = [];
     for (let i = 0; i < numParticles; i++) {
       particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: (Math.random() - 0.5) * 0.3,
-        radius: Math.random() * 1.5 + 0.5,
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.25,
+        vy: (Math.random() - 0.5) * 0.25,
+        radius: Math.random() * 1.2 + 0.6,
       });
     }
 
     let animationFrameId;
+    let isPaused = false;
 
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const onVisibilityChange = () => {
+      isPaused = document.hidden;
+      if (!isPaused) {
+        lastTime = performance.now();
+        animationFrameId = requestAnimationFrame(draw);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
 
+    let lastTime = performance.now();
+
+    const draw = (now) => {
+      if (isPaused) return;
+
+      // Smooth step
+      const dt = Math.min((now - lastTime) / 1000, 0.1);
+      lastTime = now;
+
+      ctx.clearRect(0, 0, width, height);
+
+      // Update and draw particles
       for (let i = 0; i < numParticles; i++) {
         const p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
+        p.x += p.vx * dt * 60;
+        p.y += p.vy * dt * 60;
 
-        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        if (p.x < 0) { p.x = 0; p.vx *= -1; }
+        else if (p.x > width) { p.x = width; p.vx *= -1; }
+        if (p.y < 0) { p.y = 0; p.vy *= -1; }
+        else if (p.y > height) { p.y = height; p.vy *= -1; }
 
-        // Draw particle with glow
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(230, 57, 70, 0.4)';
+        ctx.arc(p.x, p.y, p.radius, 0, 6.28318);
+        ctx.fillStyle = 'rgba(230, 57, 70, 0.45)';
         ctx.fill();
 
-        // Draw connections
+        // Optimized squared distance network connections
         for (let j = i + 1; j < numParticles; j++) {
           const p2 = particles[j];
-          const dist = Math.sqrt(Math.pow(p.x - p2.x, 2) + Math.pow(p.y - p2.y, 2));
+          const dx = p.x - p2.x;
+          const dy = p.y - p2.y;
+          const distSq = dx * dx + dy * dy;
 
-          if (dist < 140) {
-            const alpha = (1 - dist / 140) * 0.15;
+          if (distSq < maxDistSq) {
+            const alpha = (1 - distSq / maxDistSq) * 0.14;
             ctx.strokeStyle = `rgba(230, 57, 70, ${alpha})`;
             ctx.lineWidth = 0.5;
             ctx.beginPath();
@@ -67,10 +100,11 @@ const NetworkBackground = () => {
       animationFrameId = requestAnimationFrame(draw);
     };
 
-    draw();
+    animationFrameId = requestAnimationFrame(draw);
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
@@ -78,9 +112,10 @@ const NetworkBackground = () => {
   return (
     <canvas 
       ref={canvasRef} 
-      className="fixed inset-0 pointer-events-none z-0 opacity-40"
+      className="fixed inset-0 pointer-events-none z-0 opacity-40 will-change-transform"
+      style={{ width: '100vw', height: '100vh' }}
     />
   );
 };
 
-export default NetworkBackground;
+export default React.memo(NetworkBackground);
